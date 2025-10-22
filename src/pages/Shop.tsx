@@ -6,13 +6,18 @@ import { SearchIcon, FilterIcon, GridIcon, ListIcon } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { productService, Product } from '../services/dataService';
 
-const categories = ['All', 'Smartphones', 'Laptops', 'Audio', 'TVs', 'Smart Home', 'Drones', 'Wearables', 'Gaming', 'Tablets', 'Cameras'];
+const categories = [
+  'All', 'phones', 'Laptops', 'Audio', 'TVs', 'Smart Home', 
+  'Drones', 'Wearables', 'Gaming', 'Tablets', 'Cameras'
+];
 
 export const Shop = () => {
   const location = useLocation();
   const navigate = useNavigate();
+
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const initialCategory = params.get('category') || 'All';
+
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [sortBy, setSortBy] = useState('featured');
   const [viewMode, setViewMode] = useState('grid');
@@ -20,28 +25,24 @@ export const Shop = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load products from Firebase
+  // ✅ Load products from Firebase
   useEffect(() => {
-    const unsubscribe = productService.getProducts((products) => {
-      setProducts(products);
+    const unsubscribe = productService.getProducts((fetchedProducts) => {
+      setProducts(fetchedProducts);
       setLoading(false);
     });
     return unsubscribe;
   }, []);
 
-  // keep URL in sync when category changes
+  // ✅ Keep URL synced
   useEffect(() => {
     const qs = new URLSearchParams(location.search);
-    if (selectedCategory && selectedCategory !== 'All') {
-      qs.set('category', selectedCategory);
-    } else {
-      qs.delete('category');
-    }
-    if (searchQuery) {
-      qs.set('search', searchQuery);
-    } else {
-      qs.delete('search');
-    }
+    if (selectedCategory && selectedCategory !== 'All') qs.set('category', selectedCategory);
+    else qs.delete('category');
+
+    if (searchQuery) qs.set('search', searchQuery);
+    else qs.delete('search');
+
     const newSearch = qs.toString();
     const target = newSearch ? `?${newSearch}` : '';
     if (target !== location.search) {
@@ -49,24 +50,21 @@ export const Shop = () => {
     }
   }, [selectedCategory, searchQuery, location.search, navigate]);
 
-  const filteredProducts = products.filter(product => {
-    const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
+  // ✅ Filtering and sorting
+  const filteredProducts = products.filter((product) => {
+    const matchesCategory =
+      selectedCategory === 'All' || product.category === selectedCategory;
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     switch (sortBy) {
-      case 'price-low':
-        return a.price - b.price;
-      case 'price-high':
-        return b.price - a.price;
-      case 'rating':
-        return (b.rating || 0) - (a.rating || 0);
-      case 'newest':
-        return (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0);
-      default:
-        return 0;
+      case 'price-low': return a.price - b.price;
+      case 'price-high': return b.price - a.price;
+      case 'rating': return (b.rating || 0) - (a.rating || 0);
+      case 'newest': return (b.createdAt || 0) - (a.createdAt || 0);
+      default: return 0;
     }
   });
 
@@ -74,14 +72,10 @@ export const Shop = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <div className="pt-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex items-center justify-center h-64">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading products...</p>
-              </div>
-            </div>
+        <div className="pt-16 flex items-center justify-center h-[60vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading products...</p>
           </div>
         </div>
         <Footer />
@@ -94,13 +88,13 @@ export const Shop = () => {
       <Navbar />
       <div className="pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
+          {/* Page Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Shop Electronics</h1>
-            <p className="text-gray-600">Discover the latest in technology and electronics</p>
+            <p className="text-gray-600">Discover the latest in technology and gadgets</p>
           </div>
 
-          {/* Filters and Search */}
+          {/* Filters & Search */}
           <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               {/* Search */}
@@ -134,7 +128,7 @@ export const Shop = () => {
                 ))}
               </div>
 
-              {/* Sort and View */}
+              {/* Sort & View Mode */}
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
                   <FilterIcon className="h-5 w-5 text-gray-400" />
@@ -177,43 +171,33 @@ export const Shop = () => {
             </p>
           </div>
 
-          {/* Products Grid */}
-          <div className={`grid gap-6 ${
-            viewMode === 'grid' 
-              ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
-              : 'grid-cols-1'
-          }`}>
+          {/* Products Display */}
+          <div
+            className={`grid gap-6 ${
+              viewMode === 'grid'
+                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                : 'grid-cols-1'
+            }`}
+          >
             {sortedProducts.map((product) => (
-              <ProductCard key={product.id} {...product} />
+              <ProductCard
+                key={product.id}
+                {...product}
+                image={
+                  product.images && product.images.length > 0
+                    ? product.images[0]
+                    : product.image || '/placeholder.png'
+                }
+              />
             ))}
           </div>
 
           {/* No Results */}
           {sortedProducts.length === 0 && !loading && (
             <div className="text-center py-12">
-              <div className="text-gray-400 mb-4">
-                <SearchIcon className="h-16 w-16 mx-auto" />
-              </div>
-              {products.length === 0 ? (
-                <>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No products available</h3>
-                  <p className="text-gray-600 mb-6">The store is currently empty. Check back soon for new products!</p>
-                  <div className="space-y-4">
-                    <p className="text-sm text-gray-500">Are you an admin? Add products through the admin panel.</p>
-                    <a 
-                      href="/admin/products" 
-                      className="inline-flex items-center px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors duration-200 font-medium"
-                    >
-                      Go to Admin Panel
-                    </a>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-                  <p className="text-gray-600">Try adjusting your search or filter criteria</p>
-                </>
-              )}
+              <SearchIcon className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+              <p className="text-gray-600 mb-4">Try adjusting your filters or search query</p>
             </div>
           )}
         </div>

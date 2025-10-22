@@ -243,44 +243,79 @@ export const AdminPanel: React.FC = () => {
           <div className="mt-8 bg-white border border-gray-200 rounded-xl overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900">All Products Added</h3>
-              <a href="/admin/products" className="text-sm text-primary-600 hover:text-primary-700">Manage</a>
+              <a href="/admin/products" className="text-sm text-primary-600 hover:text-primary-700">
+                Manage
+              </a>
             </div>
+
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Product
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Category
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Price
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Stock
+                    </th>
                   </tr>
                 </thead>
+
                 <tbody className="bg-white divide-y divide-gray-200">
                   {allProducts.map((p) => (
                     <tr key={p.id} className="hover:bg-gray-50">
                       <td className="px-6 py-3">
                         <div className="flex items-center gap-3">
-                          {p.image ? <img src={p.image} alt={p.name} className="h-9 w-9 rounded object-cover" /> : <div className="h-9 w-9 rounded bg-gray-100" />}
+                          {/* ✅ Show first image if exists */}
+                          {p.image || (p.images && Object.keys(p.images).length > 0) ? (
+                            <img
+                              src={p.image || Object.values(p.images)[0]}
+                              alt={p.name || 'Product Image'}
+                              className="h-9 w-9 rounded object-cover border"
+                            />
+                          ) : (
+                            <div className="h-9 w-9 rounded bg-gray-100" />
+                          )}
+
+
                           <div>
-                            <div className="text-sm font-medium text-gray-900">{p.name}</div>
-                            <div className="text-xs text-gray-500">{p.brand || '—'}</div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {p.name || 'Unnamed Product'}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {p.brand || '—'}
+                            </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-3 text-sm text-gray-700">{p.category}</td>
-                      <td className="px-6 py-3 text-sm text-gray-900">KSh {Number(p.price || 0).toLocaleString()}</td>
+
+                      <td className="px-6 py-3 text-sm text-gray-700">{p.category || '—'}</td>
+                      <td className="px-6 py-3 text-sm text-gray-900">
+                        KSh {Number(p.price || 0).toLocaleString()}
+                      </td>
                       <td className="px-6 py-3 text-sm text-gray-700">{p.stock ?? 0}</td>
                     </tr>
                   ))}
+
+                  {/* ✅ If no products */}
                   {allProducts.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-500">No products found. Create your first product from the Add Product page.</td>
+                      <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-500">
+                        No products found. Create your first product from the Add Product page.
+                      </td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
           </div>
+
         </div>
       </div>
       <Footer />

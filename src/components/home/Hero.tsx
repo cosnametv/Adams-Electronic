@@ -150,7 +150,7 @@ export const Hero = () => {
                     {trendingProducts.slice(slideIndex * 3, slideIndex * 3 + 3).map((product) => (
                       <Link
                         key={product.id}
-                        to={`/shop/preview/${product.id}`}
+                        to={`/shop/product/${product.id}`}
                         className="group bg-white rounded-xl border border-gray-200 p-4 hover:border-primary-200 hover:shadow-lg transition-all duration-300"
                       >
                         <div className="relative mb-4">
