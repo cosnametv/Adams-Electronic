@@ -4,38 +4,41 @@ import { Footer } from '../../components/layout/Footer';
 import { useAuth } from '../../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { ShoppingCartIcon, UsersIcon, PackageIcon, TrendingUpIcon, PlusCircleIcon, SettingsIcon } from 'lucide-react';
-import { getApps, initializeApp } from 'firebase/app';
-import { getDatabase, onValue, ref } from 'firebase/database';
-
-// Ensure Firebase app is initialized (reuse same config)
-const firebaseConfig = {
-  apiKey: 'AIzaSyAdQEzEB9PaSa8S_Jns7GELHrYAPVgJHf0',
-  authDomain: 'home-1e420.firebaseapp.com',
-  databaseURL: 'https://home-1e420-default-rtdb.firebaseio.com',
-  projectId: 'home-1e420',
-  storageBucket: 'home-1e420.firebasestorage.app',
-  messagingSenderId: '237502846110',
-  appId: '1:237502846110:web:68729122ed80d0af7bd78f'
-};
-if (!getApps().length) {
-  initializeApp(firebaseConfig);
-}
+import { statsService, Order, User } from '../../services/dataService';
+import { ref, onValue } from 'firebase/database';
+import { database } from '../../config/firebase';
 
 export const AdminPanel: React.FC = () => {
   const { role, loading } = useAuth();
   const [allProducts, setAllProducts] = useState<any[]>([]);
-  const recentOrders = [
-    { id: 'ORD-1024', customer: 'Jane Doe', total: 129900, status: 'Paid', date: '2025-10-15' },
-    { id: 'ORD-1023', customer: 'John Smith', total: 34900, status: 'Refunded', date: '2025-10-14' },
-    { id: 'ORD-1022', customer: 'Mary Njeri', total: 79900, status: 'Shipped', date: '2025-10-14' },
-    { id: 'ORD-1021', customer: 'Ali Hassan', total: 4999, status: 'Processing', date: '2025-10-13' },
-  ];
-  const recentUsers = [
-    { id: 'u_1', name: 'Joseph Waweru', email: 'cosname4967@gmail.com', role: 'admin', joined: '2025-10-12' },
-    { id: 'u_2', name: 'Jane Doe', email: 'jane@example.com', role: 'user', joined: '2025-10-11' },
-    { id: 'u_3', name: 'John Smith', email: 'john@example.com', role: 'user', joined: '2025-10-10' },
-    { id: 'u_4', name: 'Mary Njeri', email: 'mary@example.com', role: 'user', joined: '2025-10-09' },
-  ];
+  const [stats, setStats] = useState({
+    totalOrders: 0,
+    totalRevenue: 0,
+    totalProducts: 0,
+    totalUsers: 0,
+    recentOrders: [] as Order[],
+    recentUsers: [] as User[]
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  useEffect(() => {
+    // Load products
+    const productsRef = ref(database, 'products');
+    const off = onValue(productsRef, (snap) => {
+      const val = snap.val() || {};
+      const list = Object.entries(val).map(([id, p]: any) => ({ id, ...p }));
+      list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      setAllProducts(list);
+    });
+
+    // Load statistics
+    statsService.getStats().then((statsData) => {
+      setStats(statsData);
+      setStatsLoading(false);
+    });
+
+    return () => off();
+  }, []);
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center text-gray-600">Loading...</div>;
@@ -44,18 +47,6 @@ export const AdminPanel: React.FC = () => {
   if (role !== 'admin') {
     return <Navigate to="/" replace />;
   }
-
-  useEffect(() => {
-    const db = getDatabase();
-    const productsRef = ref(db, 'products');
-    const off = onValue(productsRef, (snap) => {
-      const val = snap.val() || {};
-      const list = Object.entries(val).map(([id, p]: any) => ({ id, ...p }));
-      list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-      setAllProducts(list);
-    });
-    return () => off();
-  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -70,41 +61,58 @@ export const AdminPanel: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500">Total Orders</p>
-                  <p className="text-2xl font-bold text-gray-900">1,284</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {statsLoading ? '...' : stats.totalOrders.toLocaleString()}
+                  </p>
                 </div>
                 <ShoppingCartIcon className="h-8 w-8 text-primary-600" />
               </div>
-              <div className="text-xs text-green-600 mt-2 flex items-center"><TrendingUpIcon className="h-4 w-4 mr-1" /> +4.2% this week</div>
+              <div className="text-xs text-green-600 mt-2 flex items-center">
+                <TrendingUpIcon className="h-4 w-4 mr-1" /> 
+                {statsLoading ? '...' : '+4.2% this week'}
+              </div>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500">Revenue</p>
-                  <p className="text-2xl font-bold text-gray-900">KSh 8.2M</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {statsLoading ? '...' : `KSh ${(stats.totalRevenue / 1000000).toFixed(1)}M`}
+                  </p>
                 </div>
                 <TrendingUpIcon className="h-8 w-8 text-primary-600" />
               </div>
-              <div className="text-xs text-green-600 mt-2">+8.9% this month</div>
+              <div className="text-xs text-green-600 mt-2">
+                {statsLoading ? '...' : '+8.9% this month'}
+              </div>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500">Active Products</p>
-                  <p className="text-2xl font-bold text-gray-900">342</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {statsLoading ? '...' : stats.totalProducts.toLocaleString()}
+                  </p>
                 </div>
                 <PackageIcon className="h-8 w-8 text-primary-600" />
               </div>
-              <div className="text-xs text-gray-500 mt-2">12 low on stock</div>
+              <div className="text-xs text-gray-500 mt-2">
+                {statsLoading ? '...' : '12 low on stock'}
+              </div>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500">Customers</p>
-                  <p className="text-2xl font-bold text-gray-900">5,476</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {statsLoading ? '...' : stats.totalUsers.toLocaleString()}
+                  </p>
                 </div>
                 <UsersIcon className="h-8 w-8 text-primary-600" />
               </div>
-              <div className="text-xs text-green-600 mt-2">+215 new this week</div>
+              <div className="text-xs text-green-600 mt-2">
+                {statsLoading ? '...' : '+215 new this week'}
+              </div>
             </div>
           </div>
 
@@ -144,22 +152,39 @@ export const AdminPanel: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {recentOrders.map((o) => (
-                      <tr key={o.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-3 font-mono text-sm text-gray-900">{o.id}</td>
-                        <td className="px-6 py-3 text-sm text-gray-700">{o.customer}</td>
-                        <td className="px-6 py-3 text-sm text-gray-900">KSh {o.total.toLocaleString()}</td>
-                        <td className="px-6 py-3 text-sm">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            o.status === 'Paid' ? 'bg-green-100 text-green-700' :
-                            o.status === 'Shipped' ? 'bg-blue-100 text-blue-700' :
-                            o.status === 'Processing' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-red-100 text-red-700'
-                          }`}>{o.status}</span>
+                    {statsLoading ? (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500">
+                          Loading orders...
                         </td>
-                        <td className="px-6 py-3 text-sm text-gray-500">{o.date}</td>
                       </tr>
-                    ))}
+                    ) : stats.recentOrders.length > 0 ? (
+                      stats.recentOrders.map((o) => (
+                        <tr key={o.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-3 font-mono text-sm text-gray-900">{o.id}</td>
+                          <td className="px-6 py-3 text-sm text-gray-700">{o.customerName}</td>
+                          <td className="px-6 py-3 text-sm text-gray-900">KSh {o.total.toLocaleString()}</td>
+                          <td className="px-6 py-3 text-sm">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              o.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                              o.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                              o.status === 'processing' ? 'bg-yellow-100 text-yellow-700' :
+                              o.status === 'pending' ? 'bg-gray-100 text-gray-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>{o.status}</span>
+                          </td>
+                          <td className="px-6 py-3 text-sm text-gray-500">
+                            {new Date(o.createdAt).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500">
+                          No orders yet
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -182,16 +207,32 @@ export const AdminPanel: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {recentUsers.map((u) => (
-                      <tr key={u.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-3 text-sm text-gray-900">{u.name}</td>
-                        <td className="px-6 py-3 text-sm text-gray-700">{u.email}</td>
-                        <td className="px-6 py-3 text-sm">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>{u.role}</span>
+                    {statsLoading ? (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-500">
+                          Loading users...
                         </td>
-                        <td className="px-6 py-3 text-sm text-gray-500">{u.joined}</td>
                       </tr>
-                    ))}
+                    ) : stats.recentUsers.length > 0 ? (
+                      stats.recentUsers.map((u) => (
+                        <tr key={u.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-3 text-sm text-gray-900">{u.name}</td>
+                          <td className="px-6 py-3 text-sm text-gray-700">{u.email}</td>
+                          <td className="px-6 py-3 text-sm">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>{u.role}</span>
+                          </td>
+                          <td className="px-6 py-3 text-sm text-gray-500">
+                            {new Date(u.createdAt).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-500">
+                          No users yet
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>

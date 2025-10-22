@@ -4,7 +4,7 @@ import { Footer } from '../../components/layout/Footer';
 import { useAuth } from '../../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { getApps, initializeApp } from 'firebase/app';
-import { getDatabase, onValue, ref, set, update } from 'firebase/database';
+import { getDatabase, onValue, ref, update } from 'firebase/database';
 import { SearchIcon } from 'lucide-react';
 
 const firebaseConfig = {

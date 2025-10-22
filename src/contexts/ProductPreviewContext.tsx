@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { ProductPreviewModal } from '../components/ui/ProductPreviewModal';
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
   price: number;
   image: string;

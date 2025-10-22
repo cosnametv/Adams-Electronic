@@ -1,22 +1,7 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, User } from 'firebase/auth';
-import { getDatabase, ref, get, child } from 'firebase/database';
-
-// Firebase config provided by user
-const firebaseConfig = {
-  apiKey: 'AIzaSyAdQEzEB9PaSa8S_Jns7GELHrYAPVgJHf0',
-  authDomain: 'home-1e420.firebaseapp.com',
-  databaseURL: 'https://home-1e420-default-rtdb.firebaseio.com',
-  projectId: 'home-1e420',
-  storageBucket: 'home-1e420.firebasestorage.app',
-  messagingSenderId: '237502846110',
-  appId: '1:237502846110:web:68729122ed80d0af7bd78f'
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, User } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../config/firebase';
 
 type Role = 'admin' | 'user';
 
@@ -25,6 +10,7 @@ type AuthContextValue = {
   role: Role | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string, role: Role) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -41,37 +27,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (firebaseUser) {
         setLoading(true);
         try {
-          // Prefer role by UID (try common paths: 'users' then 'Users')
-          let resolvedRole: Role | null = null;
-          const tryPaths = [
-            `users/${firebaseUser.uid}/role`,
-            `Users/${firebaseUser.uid}/role`,
-          ];
-          for (const p of tryPaths) {
-            const snap = await get(child(ref(db), p));
-            if (snap.exists()) {
-              const r = String(snap.val()).toLowerCase();
-              resolvedRole = r === 'admin' ? 'admin' : 'user';
-              break;
-            }
+          // Check role in Firestore
+          const userDoc = await getDoc(doc(db, 'Users', firebaseUser.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            const userRole = userData.role?.toLowerCase();
+            setRole(userRole === 'admin' ? 'admin' : 'user');
+          } else {
+            setRole('user');
           }
-          // Fallback: role by email key ('.' not allowed in keys)
-          if (!resolvedRole && firebaseUser.email) {
-            const safeEmail = firebaseUser.email.replace(/[.#$\[\]]/g, ',');
-            const emailPaths = [
-              `usersByEmail/${safeEmail}/role`,
-              `UsersByEmail/${safeEmail}/role`,
-            ];
-            for (const p of emailPaths) {
-              const snap = await get(child(ref(db), p));
-              if (snap.exists()) {
-                const r = String(snap.val()).toLowerCase();
-                resolvedRole = r === 'admin' ? 'admin' : 'user';
-                break;
-              }
-            }
-          }
-          setRole(resolvedRole || 'user');
         } catch (e) {
           setRole('user');
         } finally {
@@ -93,11 +57,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const register = async (name: string, email: string, password: string, role: Role) => {
+    setLoading(true);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Save user data to Firestore
+      await setDoc(doc(db, 'Users', user.uid), {
+        name,
+        email,
+        role,
+        uid: user.uid,
+        createdAt: new Date().toISOString()
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const logout = async () => {
     await signOut(auth);
   };
 
-  const value = useMemo(() => ({ user, role, loading, login, logout }), [user, role, loading]);
+  const value = useMemo(() => ({ user, role, loading, login, register, logout }), [user, role, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

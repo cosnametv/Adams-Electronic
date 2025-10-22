@@ -1,206 +1,164 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { createPortal } from 'react-dom';
-import { XIcon, HeartIcon, ShoppingCartIcon, StarIcon, MinusIcon, PlusIcon } from 'lucide-react';
+import React from 'react';
+import { XIcon, StarIcon, ShoppingCartIcon, HeartIcon } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
 
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  images?: string[];
+  category: string;
+  isNew?: boolean;
+  discount?: number;
+  rating?: number;
+  reviews?: number;
+  description?: string;
+  features?: string[];
+  brand?: string;
+  stockCount?: number;
+  inStock?: boolean;
+}
+
 interface ProductPreviewModalProps {
-  product: {
-    id: number;
-    name: string;
-    price: number;
-    image: string;
-    images?: string[];
-    category: string;
-    isNew?: boolean;
-    discount?: number;
-    rating?: number;
-    reviews?: number;
-    description?: string;
-    features?: string[];
-    brand?: string;
-    stockCount?: number;
-    inStock?: boolean;
-  };
+  product: Product;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const ProductPreviewModal = React.memo(({ product, isOpen, onClose }: ProductPreviewModalProps) => {
-  const [selectedImage, setSelectedImage] = useState(0);
-  const [quantity, setQuantity] = useState(1);
-  const [isWishlisted, setIsWishlisted] = useState(false);
+export const ProductPreviewModal: React.FC<ProductPreviewModalProps> = ({
+  product,
+  isOpen,
+  onClose
+}) => {
   const { addToCart } = useCart();
-
-  const images = product.images || [product.image];
-  const discountedPrice = product.discount ? product.price - product.price * product.discount / 100 : product.price;
-
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = 'unset';
-      };
-    }
-  }, [isOpen]);
-
-  // Handle escape key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      return () => document.removeEventListener('keydown', handleEscape);
-    }
-  }, [isOpen, onClose]);
-
-  const handleAddToCart = useCallback(() => {
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: discountedPrice,
-      image: product.image,
-      category: product.category,
-      discount: product.discount
-    });
-    onClose();
-  }, [addToCart, product.id, product.name, discountedPrice, product.image, product.category, product.discount, onClose]);
-
-  const handleQuantityChange = useCallback((newQuantity: number) => {
-    const maxQuantity = product.stockCount || 10;
-    setQuantity(Math.max(1, Math.min(maxQuantity, newQuantity)));
-  }, [product.stockCount]);
-
-  const handleBackdropClick = useCallback((e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  }, [onClose]);
 
   if (!isOpen) return null;
 
-  const modalContent = (
-    <div className="fixed inset-0 z-50 overflow-y-auto" style={{ cursor: 'default' }}>
-      <div className="flex min-h-screen items-center justify-center p-4" style={{ cursor: 'default' }}>
+  const handleAddToCart = () => {
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      category: product.category
+    });
+    onClose();
+  };
+
+  const originalPrice = product.discount ? product.price / (1 - product.discount / 100) : product.price;
+  const finalPrice = product.discount ? product.price : originalPrice;
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex min-h-screen items-center justify-center p-4">
         {/* Backdrop */}
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-          onClick={handleBackdropClick}
-          style={{ cursor: 'pointer' }}
+          onClick={onClose}
         />
         
         {/* Modal */}
-        <div 
-          className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
-          style={{ cursor: 'default' }}
-          onClick={(e) => e.stopPropagation()}
-        >
+        <div className="relative bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Quick Preview</h2>
+            <h2 className="text-xl font-semibold text-gray-900">Product Preview</h2>
             <button
               onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors duration-200"
+              className="text-gray-400 hover:text-gray-600 transition-colors"
             >
               <XIcon className="h-6 w-6" />
             </button>
           </div>
 
-          <div className="flex flex-col lg:flex-row max-h-[calc(90vh-80px)]">
-            {/* Images Section */}
-            <div className="lg:w-1/2 p-6">
-              <div className="aspect-square overflow-hidden rounded-lg bg-gray-100 mb-4">
-                <img
-                  src={images[selectedImage]}
-                  alt={product.name}
-                  className="w-full h-full object-cover object-center"
-                />
-              </div>
-              
-              {images.length > 1 && (
-                <div className="grid grid-cols-4 gap-2">
-                  {images.map((image, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setSelectedImage(index)}
-                      className={`aspect-square overflow-hidden rounded-lg border-2 ${
-                        selectedImage === index ? 'border-primary-500' : 'border-gray-200'
-                      }`}
-                    >
-                      <img
-                        src={image}
-                        alt={`${product.name} view ${index + 1}`}
-                        className="w-full h-full object-cover object-center"
-                      />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Product Info Section */}
-            <div className="lg:w-1/2 p-6 overflow-y-auto">
+          {/* Content */}
+          <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Product Image */}
               <div className="space-y-4">
-                {/* Brand and Tags */}
-                <div className="flex items-center space-x-2">
+                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                
+                {product.images && product.images.length > 1 && (
+                  <div className="grid grid-cols-4 gap-2">
+                    {product.images.slice(0, 4).map((image, index) => (
+                      <div key={index} className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                        <img
+                          src={image}
+                          alt={`${product.name} view ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Product Info */}
+              <div className="space-y-6">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    {product.isNew && (
+                      <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                        New
+                      </span>
+                    )}
+                    <span className="text-sm text-gray-500">{product.category}</span>
+                  </div>
+                  <h1 className="text-2xl font-bold text-gray-900 mb-2">{product.name}</h1>
                   {product.brand && (
-                    <span className="text-sm text-primary-600 font-medium">{product.brand}</span>
-                  )}
-                  {product.isNew && (
-                    <span className="bg-primary-100 text-primary-800 text-xs font-bold px-2 py-1 rounded-full">
-                      NEW
-                    </span>
-                  )}
-                  {product.discount && (
-                    <span className="bg-accent-100 text-accent-800 text-xs font-bold px-2 py-1 rounded-full">
-                      {product.discount}% OFF
-                    </span>
+                    <p className="text-gray-600 mb-4">by {product.brand}</p>
                   )}
                 </div>
-
-                {/* Product Name */}
-                <h1 className="text-2xl font-bold text-gray-900">{product.name}</h1>
 
                 {/* Rating */}
                 {product.rating && (
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center gap-2">
                     <div className="flex items-center">
                       {[...Array(5)].map((_, i) => (
                         <StarIcon
                           key={i}
                           className={`h-4 w-4 ${
-                            i < Math.floor(product.rating!)
-                              ? 'text-yellow-400 fill-current'
-                              : 'text-gray-300'
+                            i < Math.floor(product.rating || 0) ? 'text-yellow-400' : 'text-gray-300'
                           }`}
+                          fill={i < Math.floor(product.rating || 0) ? 'currentColor' : 'none'}
                         />
                       ))}
                     </div>
                     <span className="text-sm text-gray-600">
-                      {product.rating} ({product.reviews} reviews)
+                      {product.rating.toFixed(1)} ({product.reviews} reviews)
                     </span>
                   </div>
                 )}
 
                 {/* Price */}
-                <div className="flex items-center space-x-4">
-                  <span className="text-2xl font-bold text-primary-600">
-                    KSh {discountedPrice.toLocaleString()}
+                <div className="flex items-center gap-4">
+                  <span className="text-2xl font-bold text-gray-900">
+                    KSh {finalPrice.toLocaleString()}
                   </span>
-                  {product.discount && (
-                    <span className="text-lg text-gray-500 line-through">
-                      KSh {product.price.toLocaleString()}
-                    </span>
+                  {product.discount && product.discount > 0 && (
+                    <>
+                      <span className="text-lg text-gray-500 line-through">
+                        KSh {originalPrice.toLocaleString()}
+                      </span>
+                      <span className="px-2 py-1 bg-red-100 text-red-800 text-sm font-medium rounded">
+                        {product.discount}% OFF
+                      </span>
+                    </>
                   )}
                 </div>
 
                 {/* Description */}
                 {product.description && (
-                  <p className="text-gray-600 text-sm leading-relaxed">{product.description}</p>
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-2">Description</h3>
+                    <p className="text-gray-600 text-sm leading-relaxed">{product.description}</p>
+                  </div>
                 )}
 
                 {/* Features */}
@@ -208,9 +166,9 @@ export const ProductPreviewModal = React.memo(({ product, isOpen, onClose }: Pro
                   <div>
                     <h3 className="text-sm font-semibold text-gray-900 mb-2">Key Features</h3>
                     <ul className="space-y-1">
-                      {product.features.slice(0, 4).map((feature, index) => (
-                        <li key={index} className="flex items-start text-sm text-gray-600">
-                          <span className="text-primary-500 mr-2">•</span>
+                      {product.features.slice(0, 5).map((feature, index) => (
+                        <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
+                          <span className="text-primary-500 mt-1">•</span>
                           <span>{feature}</span>
                         </li>
                       ))}
@@ -219,73 +177,34 @@ export const ProductPreviewModal = React.memo(({ product, isOpen, onClose }: Pro
                 )}
 
                 {/* Stock Status */}
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">Availability:</span>
-                  <span className={`text-sm font-medium ${
-                    product.inStock !== false ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {product.inStock !== false ? 'In Stock' : 'Out of Stock'}
-                  </span>
-                  {product.stockCount && (
-                    <span className="text-sm text-gray-500">
-                      ({product.stockCount} available)
+                <div className="text-sm">
+                  {product.inStock !== false ? (
+                    <span className="text-green-600">
+                      ✓ In stock {product.stockCount && `(${product.stockCount} available)`}
                     </span>
+                  ) : (
+                    <span className="text-red-600">✗ Out of stock</span>
                   )}
                 </div>
 
-                {/* Quantity and Actions */}
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-4">
-                    <span className="text-sm font-medium text-gray-700">Quantity:</span>
-                    <div className="flex items-center border border-gray-300 rounded-lg">
-                      <button
-                        onClick={() => handleQuantityChange(quantity - 1)}
-                        className="p-2 hover:bg-gray-100 transition-colors duration-200"
-                      >
-                        <MinusIcon className="h-4 w-4" />
-                      </button>
-                      <span className="px-4 py-2 text-sm font-medium min-w-[3rem] text-center">
-                        {quantity}
-                      </span>
-                      <button
-                        onClick={() => handleQuantityChange(quantity + 1)}
-                        className="p-2 hover:bg-gray-100 transition-colors duration-200"
-                      >
-                        <PlusIcon className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex space-x-3">
-                    <button
-                      onClick={handleAddToCart}
-                      disabled={product.inStock === false}
-                      className="flex-1 bg-primary-500 text-white py-3 px-6 rounded-lg hover:bg-primary-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                    >
-                      <ShoppingCartIcon className="h-5 w-5 mr-2" />
-                      Add to Cart
-                    </button>
-                    <button
-                      onClick={() => setIsWishlisted(!isWishlisted)}
-                      className={`p-3 rounded-lg border transition-colors duration-200 ${
-                        isWishlisted
-                          ? 'bg-red-50 border-red-200 text-red-600'
-                          : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      <HeartIcon className="h-6 w-6" />
-                    </button>
-                  </div>
+                {/* Actions */}
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={handleAddToCart}
+                    className="flex-1 bg-primary-500 text-white py-3 px-6 rounded-lg hover:bg-primary-600 transition-colors duration-200 font-medium flex items-center justify-center gap-2"
+                  >
+                    <ShoppingCartIcon className="h-5 w-5" />
+                    Add to Cart
+                  </button>
+                  <button className="p-3 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors duration-200">
+                    <HeartIcon className="h-5 w-5" />
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-         </div>
-       </div>
-     </div>
-   );
-
-  return createPortal(modalContent, document.body);
- });
-
-ProductPreviewModal.displayName = 'ProductPreviewModal';
+        </div>
+      </div>
+    </div>
+  );
+};

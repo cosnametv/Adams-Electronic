@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
-import { UserIcon, MailIcon, PhoneIcon, MapPinIcon, EditIcon, SaveIcon, XIcon, SettingsIcon } from 'lucide-react';
+import { UserIcon, MailIcon, PhoneIcon, EditIcon, SaveIcon, XIcon, SettingsIcon, CrownIcon, UsersIcon, PackageIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
 
@@ -13,11 +13,7 @@ export const Profile = () => {
     firstName: 'John',
     lastName: 'Doe',
     email: '',
-    phone: '+254 700 123 456',
-    address: '123 Main Street',
-    city: 'Nairobi',
-    postalCode: '00100',
-    country: 'Kenya'
+    phone: '+254 700 123 456'
   });
 
   const [editData, setEditData] = useState(userData);
@@ -74,8 +70,29 @@ export const Profile = () => {
                   <UserIcon className="h-8 w-8 text-primary-600" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
-                  <p className="text-gray-600">{user?.email || 'Signed in user'} {role && (<span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-primary-100 text-primary-700 align-middle">{role}</span>)}</p>
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
+                    {role && (
+                      <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
+                        role === 'admin' 
+                          ? 'bg-gradient-to-r from-orange-100 to-red-100 text-orange-800 border border-orange-200' 
+                          : 'bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border border-blue-200'
+                      }`}>
+                        {role === 'admin' ? (
+                          <>
+                            <CrownIcon className="h-4 w-4" />
+                            Administrator
+                          </>
+                        ) : (
+                          <>
+                            <UserIcon className="h-4 w-4" />
+                            Customer
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-gray-600 mt-1">{user?.email || 'Signed in user'}</p>
                 </div>
               </div>
               {!isEditing && (
@@ -83,10 +100,10 @@ export const Profile = () => {
                   {role === 'admin' && (
                     <button
                       onClick={() => navigate('/admin')}
-                      className="flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors duration-200"
+                      className="flex items-center px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
                     >
-                      <SettingsIcon className="h-4 w-4 mr-2" />
-                      Admin Panel
+                      <CrownIcon className="h-5 w-5 mr-2" />
+                      Admin Portal
                     </button>
                   )}
                   <button
@@ -161,49 +178,6 @@ export const Profile = () => {
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
-                      <input
-                        type="text"
-                        name="address"
-                        value={editData.address}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
-                        <input
-                          type="text"
-                          name="city"
-                          value={editData.city}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Postal Code</label>
-                        <input
-                          type="text"
-                          name="postalCode"
-                          value={editData.postalCode}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
-                        <input
-                          type="text"
-                          name="country"
-                          value={editData.country}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                        />
-                      </div>
-                    </div>
 
                     <div className="flex justify-between space-x-4">
                       <div className="text-sm text-gray-500 flex items-center">UID: <span className="ml-1 font-mono text-gray-700">{user?.uid?.slice(0, 8)}...</span></div>
@@ -244,31 +218,13 @@ export const Profile = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="flex items-center space-x-3">
-                        <PhoneIcon className="h-5 w-5 text-gray-400" />
-                        <div>
-                          <p className="text-sm text-gray-500">Phone</p>
-                          <p className="font-medium text-gray-900">{userData.phone}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <MapPinIcon className="h-5 w-5 text-gray-400" />
-                        <div>
-                          <p className="text-sm text-gray-500">Location</p>
-                          <p className="font-medium text-gray-900">{userData.city}, {userData.country}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <p className="text-sm text-gray-500 mb-1">Address</p>
-                      <p className="font-medium text-gray-900">
-                        {userData.address}<br />
-                        {userData.city}, {userData.postalCode}<br />
-                        {userData.country}
-                      </p>
-                    </div>
+                     <div className="flex items-center space-x-3">
+                       <PhoneIcon className="h-5 w-5 text-gray-400" />
+                       <div>
+                         <p className="text-sm text-gray-500">Phone</p>
+                         <p className="font-medium text-gray-900">{userData.phone}</p>
+                       </div>
+                     </div>
                   </div>
                 )}
               </div>
@@ -276,49 +232,164 @@ export const Profile = () => {
 
             {/* Account Stats */}
             <div className="space-y-6">
+              {/* Admin Section - Only show for admin users */}
+              {role === 'admin' && (
+                <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl shadow-sm p-6 border border-orange-200">
+                  <div className="flex items-center gap-2 mb-4">
+                    <CrownIcon className="h-6 w-6 text-orange-600" />
+                    <h3 className="text-lg font-semibold text-orange-900">Administrator Tools</h3>
+                  </div>
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => navigate('/admin')}
+                      className="w-full flex items-center justify-between p-3 bg-white hover:bg-orange-50 rounded-lg transition-colors duration-200 border border-orange-200"
+                    >
+                      <div className="flex items-center gap-3">
+                        <SettingsIcon className="h-5 w-5 text-orange-600" />
+                        <span className="font-medium text-gray-900">Admin Dashboard</span>
+                      </div>
+                      <span className="text-orange-600">→</span>
+                    </button>
+                    <button
+                      onClick={() => navigate('/admin/products')}
+                      className="w-full flex items-center justify-between p-3 bg-white hover:bg-orange-50 rounded-lg transition-colors duration-200 border border-orange-200"
+                    >
+                      <div className="flex items-center gap-3">
+                        <PackageIcon className="h-5 w-5 text-orange-600" />
+                        <span className="font-medium text-gray-900">Manage Products</span>
+                      </div>
+                      <span className="text-orange-600">→</span>
+                    </button>
+                    <button
+                      onClick={() => navigate('/admin/customers')}
+                      className="w-full flex items-center justify-between p-3 bg-white hover:bg-orange-50 rounded-lg transition-colors duration-200 border border-orange-200"
+                    >
+                      <div className="flex items-center gap-3">
+                        <UsersIcon className="h-5 w-5 text-orange-600" />
+                        <span className="font-medium text-gray-900">Manage Users</span>
+                      </div>
+                      <span className="text-orange-600">→</span>
+                    </button>
+                    <button
+                      onClick={() => navigate('/admin/orders')}
+                      className="w-full flex items-center justify-between p-3 bg-white hover:bg-orange-50 rounded-lg transition-colors duration-200 border border-orange-200"
+                    >
+                      <div className="flex items-center gap-3">
+                        <PackageIcon className="h-5 w-5 text-orange-600" />
+                        <span className="font-medium text-gray-900">Manage Orders</span>
+                      </div>
+                      <span className="text-orange-600">→</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="bg-white rounded-2xl shadow-sm p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Statistics</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  {role === 'admin' ? 'Admin Statistics' : 'Account Statistics'}
+                </h3>
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Total Orders</span>
-                    <span className="font-semibold text-gray-900">24</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Total Spent</span>
-                    <span className="font-semibold text-gray-900">KSh 156,800</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Member Since</span>
-                    <span className="font-semibold text-gray-900">Jan 2023</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Loyalty Points</span>
-                    <span className="font-semibold text-primary-600">1,568</span>
-                  </div>
+                  {role === 'admin' ? (
+                    <>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Total Products</span>
+                        <span className="font-semibold text-gray-900">156</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Total Users</span>
+                        <span className="font-semibold text-gray-900">2,847</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Total Orders</span>
+                        <span className="font-semibold text-gray-900">1,234</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Total Revenue</span>
+                        <span className="font-semibold text-green-600">KSh 2,456,800</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Admin Since</span>
+                        <span className="font-semibold text-gray-900">Jan 2023</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Total Orders</span>
+                        <span className="font-semibold text-gray-900">24</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Total Spent</span>
+                        <span className="font-semibold text-gray-900">KSh 156,800</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Member Since</span>
+                        <span className="font-semibold text-gray-900">Jan 2023</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Loyalty Points</span>
+                        <span className="font-semibold text-primary-600">1,568</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
               <div className="bg-white rounded-2xl shadow-sm p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
                 <div className="space-y-3">
-                  <a
-                    href="/orders"
-                    className="block w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200"
-                  >
-                    View Order History
-                  </a>
-                  <a
-                    href="/shop/cart"
-                    className="block w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200"
-                  >
-                    View Cart
-                  </a>
-                  <a
-                    href="/contact"
-                    className="block w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200"
-                  >
-                    Contact Support
-                  </a>
+                  {role === 'admin' ? (
+                    <>
+                      <a
+                        href="/admin"
+                        className="block w-full text-left px-4 py-3 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors duration-200 border border-orange-200"
+                      >
+                        <div className="flex items-center gap-2">
+                          <CrownIcon className="h-4 w-4 text-orange-600" />
+                          <span className="font-medium">Admin Dashboard</span>
+                        </div>
+                      </a>
+                      <a
+                        href="/admin/products"
+                        className="block w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                      >
+                        Manage Products
+                      </a>
+                      <a
+                        href="/admin/customers"
+                        className="block w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                      >
+                        Manage Users
+                      </a>
+                      <a
+                        href="/admin/orders"
+                        className="block w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                      >
+                        Manage Orders
+                      </a>
+                    </>
+                  ) : (
+                    <>
+                      <a
+                        href="/orders"
+                        className="block w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                      >
+                        View Order History
+                      </a>
+                      <a
+                        href="/shop/cart"
+                        className="block w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                      >
+                        View Cart
+                      </a>
+                      <a
+                        href="/contact"
+                        className="block w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                      >
+                        Contact Support
+                      </a>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

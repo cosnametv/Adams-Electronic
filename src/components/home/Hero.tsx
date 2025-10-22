@@ -1,73 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, StarIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-const trendingProducts = [
-  {
-    id: 1,
-    name: 'iPhone 13 Pro Max - 256GB',
-    price: 129900,
-    originalPrice: 149900,
-    image: 'https://images.unsplash.com/photo-1632661674596-df8be070a5c5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-    rating: 4.8,
-    reviews: 124,
-    discount: 13
-  },
-  {
-    id: 2,
-    name: 'MacBook Pro 14" M1 Pro',
-    price: 199900,
-    originalPrice: 219900,
-    image: 'https://images.unsplash.com/photo-1629131726692-1accd0c53ce0?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-    rating: 4.9,
-    reviews: 89,
-    discount: 9
-  },
-  {
-    id: 3,
-    name: 'Sony WH-1000XM4 Wireless Headphones',
-    price: 34900,
-    originalPrice: 49900,
-    image: 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-    rating: 4.7,
-    reviews: 203,
-    discount: 30
-  },
-  {
-    id: 4,
-    name: 'Samsung 55" QLED 4K Smart TV',
-    price: 79900,
-    originalPrice: 99900,
-    image: 'https://images.unsplash.com/photo-1593305841991-05c297ba4575?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-    rating: 4.6,
-    reviews: 156,
-    discount: 20
-  },
-  {
-    id: 5,
-    name: 'Amazon Echo Dot (4th Gen)',
-    price: 4999,
-    originalPrice: 9999,
-    image: 'https://images.unsplash.com/photo-1543512214-318c7553f230?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-    rating: 4.4,
-    reviews: 312,
-    discount: 50
-  },
-  {
-    id: 6,
-    name: 'Apple Watch Series 7',
-    price: 39900,
-    originalPrice: 49900,
-    image: 'https://images.unsplash.com/photo-1617043786394-f977fa12eddf?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-    rating: 4.7,
-    reviews: 189,
-    discount: 20
-  }
-];
+import { productService, Product } from '../../services/dataService';
 
 export const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = productService.getProducts((allProducts) => {
+      // Get trending products (products with discounts or high ratings)
+      const trending = allProducts
+        .filter(product => product.discount || (product.rating && product.rating >= 4.5))
+        .slice(0, 6);
+      setTrendingProducts(trending);
+      setLoading(false);
+    });
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     if (!isAutoPlaying) return;
@@ -94,10 +46,71 @@ export const Hero = () => {
     setIsAutoPlaying(false);
   };
 
-  const getVisibleProducts = () => {
-    const startIndex = currentSlide * 3;
-    return trendingProducts.slice(startIndex, startIndex + 3);
-  };
+
+  if (loading) {
+    return (
+      <section className="bg-gray-50 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 text-primary-700 text-xs font-semibold mb-4">
+              <span>🔥 Trending Now</span>
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Hot Deals This Week</h2>
+            <p className="text-gray-600">Limited time offers on our most popular products</p>
+          </div>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading trending products...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (trendingProducts.length === 0) {
+    return (
+      <section className="bg-gray-50 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 text-primary-700 text-xs font-semibold mb-4">
+              <span>🔥 Trending Now</span>
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Hot Deals This Week</h2>
+            <p className="text-gray-600">Limited time offers on our most popular products</p>
+          </div>
+          
+          <div className="text-center py-12">
+            <div className="text-gray-400 mb-4">
+              <svg className="h-16 w-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No products available</h3>
+            <p className="text-gray-600 mb-6">The store is currently empty. Check back soon for our hot deals and trending products!</p>
+            <div className="space-y-4">
+              <p className="text-sm text-gray-500">Are you an admin? Add products through the admin panel.</p>
+              <div className="flex gap-4 justify-center">
+                <Link
+                  to="/shop/products"
+                  className="inline-flex items-center px-6 py-3 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors"
+                >
+                  Browse All Products
+                </Link>
+                <a 
+                  href="/admin/products" 
+                  className="inline-flex items-center px-6 py-3 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Go to Admin Panel
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="bg-gray-50 py-12">
@@ -108,7 +121,7 @@ export const Hero = () => {
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Hot Deals This Week</h2>
           <p className="text-gray-600">Limited time offers on our most popular products</p>
-      </div>
+        </div>
 
             <div className="relative">
           {/* Navigation Buttons */}
@@ -164,7 +177,7 @@ export const Hero = () => {
                                 <StarIcon
                                   key={i}
                                   className={`h-4 w-4 ${
-                                    i < Math.floor(product.rating)
+                                    i < Math.floor(product.rating || 0)
                                       ? 'text-yellow-400 fill-current'
                                       : 'text-gray-300'
                                   }`}
@@ -179,7 +192,7 @@ export const Hero = () => {
                               KSh {product.price.toLocaleString()}
                 </span>
                             <span className="text-sm text-gray-500 line-through">
-                              KSh {product.originalPrice.toLocaleString()}
+                              KSh {(product.originalPrice || product.price).toLocaleString()}
                 </span>
             </div>
           </div>

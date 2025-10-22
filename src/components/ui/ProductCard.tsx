@@ -1,76 +1,155 @@
-import React, { useState, useCallback } from 'react';
-import { ShoppingCartIcon } from 'lucide-react';
-import { useCart } from '../../contexts/CartContext';
+import React from 'react';
 import { Link } from 'react-router-dom';
+import { StarIcon, HeartIcon, ShoppingCartIcon } from 'lucide-react';
+import { useCart } from '../../contexts/CartContext';
+
 interface ProductCardProps {
-  id: number;
+  id: string;
   name: string;
   price: number;
   image: string;
+  images?: string[];
   category: string;
+  brand?: string;
   isNew?: boolean;
   discount?: number;
   rating?: number;
   reviews?: number;
   description?: string;
   features?: string[];
-  brand?: string;
-  stockCount?: number;
-  images?: string[];
+  stock?: number;
+  originalPrice?: number;
 }
-export const ProductCard = ({
+
+export const ProductCard: React.FC<ProductCardProps> = ({
   id,
   name,
   price,
   image,
   category,
+  brand,
   isNew,
   discount,
   rating,
   reviews,
-  description,
-  features,
-  brand,
-  stockCount,
-  images
-}: ProductCardProps) => {
-  const [isHovered, setIsHovered] = useState(false);
+  stock,
+  originalPrice
+}) => {
   const { addToCart } = useCart();
-  const discountedPrice = discount ? price - price * discount / 100 : price;
 
-  const handleAddToCart = useCallback((e: React.MouseEvent) => {
+  const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     addToCart({
       id,
       name,
-      price: discountedPrice,
+      price,
       image,
-      category,
-      discount
+      category
     });
-  }, [addToCart, id, name, discountedPrice, image, category, discount]);
-  return <div className="group relative bg-white rounded-xl border border-gray-200 overflow-hidden transition-colors hover:border-primary-200" onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
-      <Link to={`/shop/preview/${id}`} className="block">
-        <div className="relative h-48 overflow-hidden">
-          <img src={image} alt={name} className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105" />
-          <div className={`absolute top-3 left-3 z-20 flex gap-2`}> 
-            {isNew && <div className="bg-primary-600 text-white text-[10px] font-bold px-2 py-1 rounded-full">New</div>}
-            {discount && <div className="bg-accent-600 text-white text-[10px] font-bold px-2 py-1 rounded-full">{discount}% OFF</div>}
+  };
+
+  const finalPrice = discount && discount > 0 ? price * (1 - discount / 100) : price;
+  const displayOriginalPrice = originalPrice || price;
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200 group">
+      <Link to={`/product/${id}`} className="block">
+        {/* Product Image */}
+        <div className="aspect-square bg-gray-100 relative overflow-hidden">
+          <img
+            src={image}
+            alt={name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+          />
+          
+          {/* Badges */}
+          <div className="absolute top-3 left-3 flex flex-col gap-2">
+            {isNew && (
+              <span className="px-2 py-1 bg-green-500 text-white text-xs font-medium rounded-full">
+                New
+              </span>
+            )}
+            {discount && discount > 0 && (
+              <span className="px-2 py-1 bg-red-500 text-white text-xs font-medium rounded-full">
+                -{discount}%
+              </span>
+            )}
+          </div>
+
+          {/* Quick Actions */}
+          <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <button className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors">
+              <HeartIcon className="h-4 w-4 text-gray-600" />
+            </button>
           </div>
         </div>
-      </Link>
-      <div className="p-4">
-        <div className="text-[11px] font-medium text-gray-500 mb-1">{category}</div>
-        <Link to={`/shop/preview/${id}`} className="block">
-          <h3 className="text-gray-900 font-semibold text-sm mb-1 line-clamp-1 hover:text-primary-700">{name}</h3>
-        </Link>
-        <div className="flex items-center mb-3">
-          <div className="text-base font-bold text-gray-900">KSh {discountedPrice.toLocaleString()}</div>
-          {discount && <div className="ml-2 text-gray-400 text-xs line-through">KSh {price.toLocaleString()}</div>}
+
+        {/* Product Info */}
+        <div className="p-4">
+          <div className="mb-2">
+            <span className="text-xs text-gray-500 uppercase tracking-wide">{category}</span>
+            {brand && (
+              <span className="text-xs text-gray-400 ml-2">• {brand}</span>
+            )}
+          </div>
+          
+          <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors">
+            {name}
+          </h3>
+
+          {/* Rating */}
+          {rating && (
+            <div className="flex items-center gap-1 mb-3">
+              <div className="flex items-center">
+                {[...Array(5)].map((_, i) => (
+                  <StarIcon
+                    key={i}
+                    className={`h-3 w-3 ${
+                      i < Math.floor(rating) ? 'text-yellow-400' : 'text-gray-300'
+                    }`}
+                    fill={i < Math.floor(rating) ? 'currentColor' : 'none'}
+                  />
+                ))}
+              </div>
+              <span className="text-xs text-gray-500">
+                {rating.toFixed(1)} ({reviews})
+              </span>
+            </div>
+          )}
+
+          {/* Price */}
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg font-bold text-gray-900">
+              KSh {finalPrice.toLocaleString()}
+            </span>
+            {discount && discount > 0 && (
+              <span className="text-sm text-gray-500 line-through">
+                KSh {displayOriginalPrice.toLocaleString()}
+              </span>
+            )}
+          </div>
+
+          {/* Stock Status */}
+          <div className="text-xs mb-3">
+            {stock && stock > 0 ? (
+              <span className="text-green-600">✓ In stock</span>
+            ) : (
+              <span className="text-red-600">✗ Out of stock</span>
+            )}
+          </div>
+
+          {/* Add to Cart Button */}
+          <button
+            onClick={handleAddToCart}
+            disabled={!stock || stock <= 0}
+            className="w-full bg-primary-500 text-white py-2 px-4 rounded-lg hover:bg-primary-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center gap-2 text-sm font-medium"
+          >
+            <ShoppingCartIcon className="h-4 w-4" />
+            Add to Cart
+          </button>
         </div>
-        <button onClick={handleAddToCart} className="w-full py-2.5 px-4 bg-primary-600 hover:bg-primary-700 text-white rounded-lg flex items-center justify-center text-sm font-medium">
-          <ShoppingCartIcon className="h-4 w-4 mr-2" /> Add to cart
-        </button>
-      </div>
-    </div>;
+      </Link>
+    </div>
+  );
 };

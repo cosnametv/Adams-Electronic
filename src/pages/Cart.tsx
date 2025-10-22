@@ -1,4 +1,3 @@
-import React from 'react';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
 import { useCart } from '../contexts/CartContext';
@@ -8,7 +7,7 @@ import { MinusIcon, PlusIcon, TrashIcon, ShoppingBagIcon, ArrowLeftIcon } from '
 export const Cart = () => {
   const { state, updateQuantity, removeFromCart, clearCart } = useCart();
 
-  const handleQuantityChange = (id: number, newQuantity: number) => {
+  const handleQuantityChange = (id: string, newQuantity: number) => {
     if (newQuantity <= 0) {
       removeFromCart(id);
     } else {
@@ -16,7 +15,7 @@ export const Cart = () => {
     }
   };
 
-  const handleRemoveItem = (id: number) => {
+  const handleRemoveItem = (id: string) => {
     removeFromCart(id);
   };
 

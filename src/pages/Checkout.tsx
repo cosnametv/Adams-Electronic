@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
 import { useCart } from '../contexts/CartContext';
-import { ArrowLeftIcon, CreditCardIcon, MapPinIcon, PhoneIcon, MailIcon, CheckIcon } from 'lucide-react';
+import { ArrowLeftIcon, CheckIcon } from 'lucide-react';
 
 export const Checkout = () => {
   const { state, clearCart } = useCart();

@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { useAuth } from '../../contexts/AuthContext';
-import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2Icon, ShieldCheckIcon, UserIcon } from 'lucide-react';
 export const Login = () => {
@@ -40,7 +39,7 @@ export const Login = () => {
               <UserIcon className="h-6 w-6" />
             </div>
             <h2 className="mt-4 text-3xl font-extrabold text-gray-900">
-              Sign in to Cosname
+              Sign in to Adams Electronic
             </h2>
             <p className="mt-2 text-sm text-gray-600">
               Or{' '}
