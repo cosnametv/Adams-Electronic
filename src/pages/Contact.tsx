@@ -3,23 +3,26 @@ import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
 import { MapPinIcon, PhoneIcon, MailIcon, ClockIcon, SendIcon, MessageCircleIcon } from 'lucide-react';
 
+import { collection, addDoc, Timestamp } from "firebase/firestore";
+import { db } from "../config/firebase";
+
 const contactInfo = [
   {
     icon: MapPinIcon,
     title: 'Visit Our Store',
-    details: ['Westlands Shopping Centre', '2nd Floor, Shop 205', 'Nairobi, Kenya'],
+    details: ['Kutus Nairobi Stage', 'Kutus, Kenya'],
     color: 'text-blue-600'
   },
   {
     icon: PhoneIcon,
     title: 'Call Us',
-    details: ['+254 700 123 456', '+254 20 123 4567', 'Mon-Fri: 8AM-6PM'],
+    details: ['+254 700 056557', 'Mon-Fri: 8AM-6PM'],
     color: 'text-green-600'
   },
   {
     icon: MailIcon,
     title: 'Email Us',
-    details: ['info@electrohub.co.ke', 'support@electrohub.co.ke', 'sales@electrohub.co.ke'],
+    details: ['info@electrohub.co.ke'],
     color: 'text-purple-600'
   },
   {
@@ -33,7 +36,7 @@ const contactInfo = [
 const faqs = [
   {
     question: 'What is your return policy?',
-    answer: 'We offer a 30-day return policy for all products. Items must be in original condition with packaging and receipt.'
+    answer: 'We offer a 5-day return policy for all products. Items must be in original condition with packaging and receipt.'
   },
   {
     question: 'Do you offer international shipping?',
@@ -41,7 +44,7 @@ const faqs = [
   },
   {
     question: 'How long does delivery take?',
-    answer: 'For Nairobi orders, we offer same-day delivery. For other cities, delivery takes 1-2 business days.'
+    answer: 'For Kiriyaga orders, we offer same-day delivery. For other cities, delivery takes 1-2 business days.'
   },
   {
     question: 'Do you offer installation services?',
@@ -49,7 +52,7 @@ const faqs = [
   },
   {
     question: 'What payment methods do you accept?',
-    answer: 'We accept M-Pesa, bank transfers, credit/debit cards, and cash on delivery.'
+    answer: 'We accept M-Pesa (Business Number:247247 Account Number:0700056557), and cash on delivery.'
   },
   {
     question: 'Do you have a warranty on products?',
@@ -80,19 +83,31 @@ export const Contact = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      subject: '',
-      message: ''
-    });
+
+    try {
+      await addDoc(collection(db, "Messages"), {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        subject: formData.subject,
+        message: formData.message,
+        createdAt: Timestamp.now()
+      });
+
+      setIsSubmitting(false);
+      setIsSubmitted(true);
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        subject: '',
+        message: ''
+      });
+    } catch (error) {
+      console.error("Error sending message: ", error);
+      setIsSubmitting(false);
+      alert("Failed to send message. Please try again.");
+    }
   };
 
   return (
@@ -254,14 +269,6 @@ export const Contact = () => {
                 </div>
               </div>
 
-              {/* Map Placeholder */}
-              <div className="bg-gray-200 rounded-2xl h-64 flex items-center justify-center">
-                <div className="text-center text-gray-500">
-                  <MapPinIcon className="h-12 w-12 mx-auto mb-2" />
-                  <p>Interactive Map</p>
-                  <p className="text-sm">Westlands Shopping Centre, Nairobi</p>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -289,13 +296,13 @@ export const Contact = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
-                href="tel:+254700123456"
+                href="tel:+254700056557"
                 className="bg-white text-primary-600 px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors duration-200"
               >
                 Call Us Now
               </a>
               <a
-                href="mailto:info@electrohub.co.ke"
+                href="mailto:adamselectronicgadgets@gmail.com"
                 className="border-2 border-white text-white px-6 py-3 rounded-lg font-medium hover:bg-white hover:text-primary-600 transition-colors duration-200"
               >
                 Email Us
