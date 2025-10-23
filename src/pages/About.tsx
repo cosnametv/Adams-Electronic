@@ -78,7 +78,7 @@ export const About = () => {
                 <h2 className="text-3xl font-bold text-gray-900 mb-6">Our Story</h2>
                 <div className="space-y-4 text-gray-600">
                   <p>
-                    Founded in 2008, ElectroHub started as a small electronics store in Nairobi with a simple mission: 
+                    Founded in 2020, Adams Electronic started as a small electronics store in Kutus with a simple mission: 
                     to make cutting-edge technology accessible to everyone in Kenya. What began as a passion project 
                     has grown into one of the country's leading electronics retailers.
                   </p>

@@ -103,17 +103,17 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
-                <a href="#" className="text-gray-300 hover:text-primary-400 transition-colors text-sm">
+                <a href="/contact" className="text-gray-300 hover:text-primary-400 transition-colors text-sm">
                   Shipping Info
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-300 hover:text-primary-400 transition-colors text-sm">
+                <a href="/about" className="text-gray-300 hover:text-primary-400 transition-colors text-sm">
                   Returns & Exchanges
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-300 hover:text-primary-400 transition-colors text-sm">
+                <a href="/contact" className="text-gray-300 hover:text-primary-400 transition-colors text-sm">
                   FAQ
                 </a>
               </li>
@@ -127,8 +127,8 @@ export const Footer = () => {
               <div className="flex items-center space-x-3">
                 <MapPinIcon className="h-5 w-5 text-primary-400" />
                 <span className="text-gray-300 text-sm">
-                  123 Electronics Street<br />
-                  Nairobi, Kenya
+                  Sagana - Embu Highway<br />
+                  Kutus, Kenya
                 </span>
               </div>
               <div className="flex items-center space-x-3">
