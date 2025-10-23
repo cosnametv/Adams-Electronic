@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../../config/firebase'; 
 
 export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -19,12 +21,31 @@ export const Navbar = () => {
 
   const cartItemsCount = items.reduce((total, item) => total + item.quantity, 0);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/shop/products?search=${encodeURIComponent(searchQuery.trim())}`);
+
+    if (!searchQuery.trim()) return;
+
+    try {
+      // 🔍 Search Firestore products by "name" field
+      const productsRef = collection(db, 'products');
+      const q = query(productsRef, where('name', '>=', searchQuery), where('name', '<=', searchQuery + '\uf8ff'));
+      const snapshot = await getDocs(q);
+
+      const results = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      // Navigate to results page with query and results
+      navigate(`/shop/products?search=${encodeURIComponent(searchQuery)}`, {
+        state: { results },
+      });
+
       setSearchQuery('');
       setIsMenuOpen(false);
+    } catch (error) {
+      console.error('Error searching products:', error);
     }
   };
 
@@ -41,7 +62,7 @@ export const Navbar = () => {
     <nav className="fixed top-0 left-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          
+
           {/* Logo */}
           <Link to="/" className="text-2xl font-bold text-primary-600 hover:text-primary-700 transition">
             Adams Electronic
@@ -70,7 +91,7 @@ export const Navbar = () => {
                 <Search className="absolute left-3 top-2.5 text-gray-400 h-5 w-5" />
                 <input
                   type="text"
-                  placeholder="Search products..."
+                  placeholder="Search by name..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-full text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all"
@@ -155,13 +176,13 @@ export const Navbar = () => {
           }`}
         >
           <div className="flex flex-col space-y-4 py-4 border-t border-gray-200">
-            {/* Search for mobile */}
+            {/* Mobile Search */}
             <form onSubmit={handleSearch} className="px-2">
               <div className="relative">
                 <Search className="absolute left-3 top-2.5 text-gray-400 h-5 w-5" />
                 <input
                   type="text"
-                  placeholder="Search..."
+                  placeholder="Search by name..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-full text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
@@ -169,11 +190,11 @@ export const Navbar = () => {
               </div>
             </form>
 
-            {/* Navigation Links */}
-            {['products', 'Categories', 'About', 'Contact'].map((link) => (
+            {/* Links */}
+            {['Products', 'Categories', 'About', 'Contact'].map((link) => (
               <Link
                 key={link}
-                to={`/${link.toLowerCase() === 'home' ? '' : link.toLowerCase()}`}
+                to={`/shop/${link.toLowerCase()}`}
                 onClick={() => setIsMenuOpen(false)}
                 className="px-4 text-gray-700 hover:text-primary-600 transition font-medium"
               >
@@ -181,7 +202,6 @@ export const Navbar = () => {
               </Link>
             ))}
 
-            {/* Auth Links */}
             {!user && (
               <div className="flex flex-col space-y-2 px-4">
                 <Link to="/login" onClick={() => setIsMenuOpen(false)} className="hover:text-primary-600 transition">

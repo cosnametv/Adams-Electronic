@@ -7,8 +7,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { productService, Product } from '../services/dataService';
 
 const categories = [
-  'All', 'phones', 'Laptops', 'Audio', 'TVs', 'Smart Home', 
-  'Drones', 'Wearables', 'Gaming', 'Tablets', 'Cameras'
+  'All', 'Phones', 'Laptops', 'Sound Systems', 'TVs', 'House Appliances', 
+  'Network Accessories', 'Electronics', 'Accessories'
 ];
 
 export const Shop = () => {

@@ -1,6 +1,6 @@
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Smartphone,
   Tv,
@@ -99,15 +99,20 @@ const categories = [
 export function Categories() {
   const { id } = useParams();
   const navigate = useNavigate();
-  
-  const filteredCategories = id 
-    ? categories.filter(category => category.id === id)
+
+  const filteredCategories = id
+    ? categories.filter((category) => category.id === id)
     : categories;
+
+  const handleCategoryClick = (categoryName: string) => {
+    // ✅ Navigate using query parameter instead of /categories/:id
+    navigate(`/shop/products?category=${encodeURIComponent(categoryName)}`);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
+
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -122,7 +127,7 @@ export function Categories() {
             {id ? 'Category Details' : 'Product Categories'}
           </h1>
           <p className="text-gray-600">
-            {id 
+            {id
               ? 'Explore products in this category'
               : 'Browse our wide range of electronic products by category'
             }
@@ -134,10 +139,10 @@ export function Categories() {
           {filteredCategories.map((category) => {
             const IconComponent = category.icon;
             return (
-              <Link
+              <div
                 key={category.id}
-                to={`/shop/categories/${category.id}`}
-                className="group bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden"
+                onClick={() => handleCategoryClick(category.name)}
+                className="group bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer"
               >
                 <div className="relative h-48 overflow-hidden">
                   <img
@@ -152,7 +157,7 @@ export function Categories() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="p-6">
                   <h3 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
                     {category.name}
@@ -169,7 +174,7 @@ export function Categories() {
                     </span>
                   </div>
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>

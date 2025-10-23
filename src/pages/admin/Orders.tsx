@@ -88,9 +88,9 @@ export const Orders: React.FC = () => {
     return orders.filter((o) => {
       const matchesQuery = queryText
         ? o.customerName?.toLowerCase().includes(queryText.toLowerCase()) ||
-          o.email?.toLowerCase().includes(queryText.toLowerCase()) ||
-          o.customerId?.toLowerCase().includes(queryText.toLowerCase()) ||
-          o.id.toLowerCase().includes(queryText.toLowerCase())
+        o.email?.toLowerCase().includes(queryText.toLowerCase()) ||
+        o.customerId?.toLowerCase().includes(queryText.toLowerCase()) ||
+        o.id.toLowerCase().includes(queryText.toLowerCase())
         : true;
 
       const matchesStatus = statusFilter === 'All' ? true : o.status === statusFilter;
@@ -201,11 +201,10 @@ export const Orders: React.FC = () => {
                   <button
                     key={s}
                     onClick={() => setStatusFilter(s as any)}
-                    className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap ${
-                      statusFilter === s
+                    className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap ${statusFilter === s
                         ? 'bg-primary-600 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+                      }`}
                   >
                     {s}
                   </button>
@@ -267,21 +266,21 @@ export const Orders: React.FC = () => {
                       <td className="px-6 py-3 font-mono text-sm text-gray-900">
                         {o.id.slice(0, 8)}...
                       </td>
-<td className="px-6 py-3 text-sm text-gray-900">
-  <div>
-    {/* ✅ If order has a customer name, show that. Otherwise show first product name */}
-    <div className="font-medium">
-      {o.customerName || (o.items && o.items[0]?.name) || 'Unknown'}
-    </div>
+                      <td className="px-6 py-3 text-sm text-gray-900">
+                        <div>
+                        
+                          <div className="font-medium">
+                            {o.customerName || (o.items && o.items[0]?.name) || 'Unknown'}
+                          </div>
 
-    {o.location && (
-      <div className="text-xs text-gray-500 flex items-center">
-        <MapPinIcon className="h-3 w-3 mr-1" />
-        {o.location}
-      </div>
-    )}
-  </div>
-</td>
+                          {o.location && (
+                            <div className="text-xs text-gray-500 flex items-center">
+                              <MapPinIcon className="h-3 w-3 mr-1" />
+                              {o.location}
+                            </div>
+                          )}
+                        </div>
+                      </td>
 
                       <td className="px-6 py-3 text-sm text-gray-700">
                         <div className="space-y-1">
