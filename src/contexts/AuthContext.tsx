@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, User } from 'firebase/auth';
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, User } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 import { cacheService, CACHE_KEYS, CACHE_TTL } from '../services/cacheService';
@@ -14,6 +14,7 @@ type AuthContextValue = {
   login: (email: string, password: string) => Promise<void>;
   register: (fullName: string, phoneNumber: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -116,6 +117,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+      console.log('✅ Password reset email sent to:', email);
+    } catch (error) {
+      console.error('❌ Password reset failed:', error);
+      throw error;
+    }
+  };
+
   const logout = async () => {
     // Clear auth cache and cookies
     if (user) {
@@ -131,7 +142,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await signOut(auth);
   };
 
-  const value = useMemo(() => ({ user, role, loading, login, register, logout }), [user, role, loading]);
+  const value = useMemo(() => ({ user, role, loading, login, register, logout, resetPassword }), [user, role, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

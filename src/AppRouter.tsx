@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Home } from './pages/Home';
 import { Login } from './pages/auth/Login';
 import { Register } from './pages/Register';
+import { ForgotPassword } from './pages/ForgotPassword';
 import { Shop } from './pages/Shop';
 import { Categories } from './pages/Categories';
 import { ProductDetail } from './pages/ProductDetail';
@@ -26,6 +27,7 @@ export function AppRouter() {
         <Route path="/auth/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/shop/products" element={<Shop />} />
         <Route path="/shop/categories" element={<Categories />} />
         <Route path="/shop/categories/:id" element={<Categories />} />

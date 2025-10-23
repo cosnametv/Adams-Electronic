@@ -16,10 +16,9 @@ export const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [userData, setUserData] = useState({
-    firstName: '',
-    lastName: '',
+    name: '',
     email: '',
-    phone: ''
+    phoneNumber: ''
   });
   const [editData, setEditData] = useState(userData);
 
@@ -30,30 +29,30 @@ export const Profile = () => {
       setLoadingData(true);
 
       try {
-        const userRef = doc(db, 'users', user.uid);
+        const userRef = doc(db, 'Users', user.uid);
         const docSnap = await getDoc(userRef);
 
         if (docSnap.exists()) {
           const data = docSnap.data();
           setUserData({
-            firstName: data.firstName || '',
-            lastName: data.lastName || '',
-            email: user.email || '',
-            phone: data.phone || ''
+            name: data.name || '',
+            email: data.email || user.email || '',
+            phoneNumber: data.phoneNumber || ''
           });
           setEditData({
-            firstName: data.firstName || '',
-            lastName: data.lastName || '',
-            email: user.email || '',
-            phone: data.phone || ''
+            name: data.name || '',
+            email: data.email || user.email || '',
+            phoneNumber: data.phoneNumber || ''
           });
         } else {
           // create basic user doc if not exists
           await setDoc(userRef, {
-            firstName: '',
-            lastName: '',
+            name: '',
             email: user.email || '',
-            phone: ''
+            phoneNumber: '',
+            role: 'user',
+            uid: user.uid,
+            createdAt: new Date().toISOString()
           });
         }
       } catch (err) {
@@ -85,11 +84,10 @@ export const Profile = () => {
     if (!user?.uid) return;
 
     try {
-      const userRef = doc(db, 'users', user.uid);
+      const userRef = doc(db, 'Users', user.uid);
       await updateDoc(userRef, {
-        firstName: editData.firstName,
-        lastName: editData.lastName,
-        phone: editData.phone || ''
+        name: editData.name,
+        phoneNumber: editData.phoneNumber || ''
       });
 
       setUserData(editData);
@@ -193,27 +191,16 @@ export const Profile = () => {
 
               {isEditing ? (
                 <form className="space-y-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-                      <input
-                        type="text"
-                        name="firstName"
-                        value={editData.firstName}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-                      <input
-                        type="text"
-                        name="lastName"
-                        value={editData.lastName}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={editData.name}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500"
+                      placeholder="Enter your full name"
+                    />
                   </div>
 
                   <div>
@@ -228,13 +215,14 @@ export const Profile = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
                     <input
                       type="tel"
-                      name="phone"
-                      value={editData.phone}
+                      name="phoneNumber"
+                      value={editData.phoneNumber}
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500"
+                      placeholder="Enter your phone number"
                     />
                   </div>
 
@@ -262,28 +250,27 @@ export const Profile = () => {
                 </form>
               ) : (
                 <div className="space-y-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="flex items-center gap-3">
-                      <UserIcon className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="text-sm text-gray-500">Full Name</p>
-                        <p className="font-medium text-gray-900">{userData.firstName} {userData.lastName}</p>
-                      </div>
+                  <div className="flex items-center gap-3">
+                    <UserIcon className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-500">Full Name</p>
+                      <p className="font-medium text-gray-900">{userData.name || 'Not provided'}</p>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <MailIcon className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="text-sm text-gray-500">Email</p>
-                        <p className="font-medium text-gray-900 break-all">{userData.email}</p>
-                      </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <MailIcon className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-500">Email</p>
+                      <p className="font-medium text-gray-900 break-all">{userData.email}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3">
                     <PhoneIcon className="h-5 w-5 text-gray-400" />
                     <div>
-                      <p className="text-sm text-gray-500">Phone</p>
-                      <p className="font-medium text-gray-900">{userData.phone || 'Not provided'}</p>
+                      <p className="text-sm text-gray-500">Phone Number</p>
+                      <p className="font-medium text-gray-900">{userData.phoneNumber || 'Not provided'}</p>
                     </div>
                   </div>
                 </div>
