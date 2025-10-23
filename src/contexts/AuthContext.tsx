@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, User } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
+import { cacheService, CACHE_KEYS, CACHE_TTL } from '../services/cacheService';
+import { cookieService, COOKIE_KEYS, COOKIE_OPTIONS } from '../services/cookieService';
 
 type Role = 'admin' | 'user';
 
@@ -27,17 +29,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (firebaseUser) {
         setLoading(true);
         try {
+          // Check cache first for user role
+          const cachedAuth = cacheService.get<{ role: Role }>(`${CACHE_KEYS.AUTH}_${firebaseUser.uid}`, {
+            ttl: CACHE_TTL.AUTH,
+            storage: 'localStorage'
+          });
+
+          if (cachedAuth) {
+            console.log('🔐 Auth data loaded from cache');
+            setRole(cachedAuth.role);
+            setLoading(false);
+            return;
+          }
+
           // Check role in Firestore
           const userDoc = await getDoc(doc(db, 'Users', firebaseUser.uid));
           if (userDoc.exists()) {
             const userData = userDoc.data();
             const userRole = userData.role?.toLowerCase();
-            setRole(userRole === 'admin' ? 'admin' : 'user');
+            const role = userRole === 'admin' ? 'admin' : 'user';
+            setRole(role);
+
+            // Cache the auth data
+            cacheService.set(`${CACHE_KEYS.AUTH}_${firebaseUser.uid}`, { role }, {
+              ttl: CACHE_TTL.AUTH,
+              storage: 'localStorage'
+            });
+
+            // Also save to cookies for persistence
+            cookieService.setJSON(`${COOKIE_KEYS.AUTH}_${firebaseUser.uid}`, { role }, COOKIE_OPTIONS.SESSION_ID);
+            
+            console.log('🔐 Auth data loaded from Firebase and cached');
           } else {
             setRole('user');
           }
         } catch (e) {
-          setRole('user');
+          console.warn('Auth error, using cached data:', e);
+          // Try to load from cookies as fallback
+          const cookieAuth = cookieService.getJSON<{ role: Role }>(`${COOKIE_KEYS.AUTH}_${firebaseUser.uid}`);
+          if (cookieAuth) {
+            setRole(cookieAuth.role);
+          } else {
+            setRole('user');
+          }
         } finally {
           setLoading(false);
         }
@@ -77,6 +111,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
+    // Clear auth cache and cookies
+    if (user) {
+      try {
+        cacheService.remove(`${CACHE_KEYS.AUTH}_${user.uid}`);
+        cookieService.remove(`${COOKIE_KEYS.AUTH}_${user.uid}`);
+        console.log('🔐 Auth cache cleared on logout');
+      } catch (error) {
+        console.warn('Failed to clear auth cache:', error);
+      }
+    }
+    
     await signOut(auth);
   };
 

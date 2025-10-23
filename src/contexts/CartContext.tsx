@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
+import { cacheService, CACHE_KEYS, CACHE_TTL } from '../services/cacheService';
+import { cookieService, COOKIE_KEYS, COOKIE_OPTIONS } from '../services/cookieService';
 
 export interface CartItem {
   id: string;
@@ -22,11 +24,38 @@ type CartAction =
   | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } }
   | { type: 'CLEAR_CART' };
 
-const initialState: CartState = {
-  items: [],
-  totalItems: 0,
-  totalPrice: 0,
+// Load initial state from cache/cookies
+const loadInitialState = (): CartState => {
+  try {
+    // Try to load from cache first
+    const cachedCart = cacheService.get<CartState>(CACHE_KEYS.CART, {
+      ttl: CACHE_TTL.CART,
+      storage: 'localStorage'
+    });
+
+    if (cachedCart) {
+      console.log('🛒 Cart loaded from cache');
+      return cachedCart;
+    }
+
+    // Fallback to cookies
+    const cookieCart = cookieService.getJSON<CartState>(COOKIE_KEYS.CART);
+    if (cookieCart) {
+      console.log('🛒 Cart loaded from cookies');
+      return cookieCart;
+    }
+  } catch (error) {
+    console.warn('Failed to load cart from storage:', error);
+  }
+
+  return {
+    items: [],
+    totalItems: 0,
+    totalPrice: 0,
+  };
 };
+
+const initialState: CartState = loadInitialState();
 
 const cartReducer = (state: CartState, action: CartAction): CartState => {
   switch (action.type) {
@@ -115,6 +144,28 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState);
 
+  // Persist cart to storage whenever state changes
+  useEffect(() => {
+    const persistCart = () => {
+      try {
+        // Save to cache
+        cacheService.set(CACHE_KEYS.CART, state, {
+          ttl: CACHE_TTL.CART,
+          storage: 'localStorage'
+        });
+
+        // Save to cookies as backup
+        cookieService.setJSON(COOKIE_KEYS.CART, state, COOKIE_OPTIONS.CART);
+        
+        console.log('🛒 Cart persisted to storage');
+      } catch (error) {
+        console.warn('Failed to persist cart:', error);
+      }
+    };
+
+    persistCart();
+  }, [state]);
+
   const addToCart = (item: Omit<CartItem, 'quantity'>) => {
     dispatch({ type: 'ADD_TO_CART', payload: item });
   };
@@ -129,6 +180,14 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const clearCart = () => {
     dispatch({ type: 'CLEAR_CART' });
+    // Clear from storage as well
+    try {
+      cacheService.remove(CACHE_KEYS.CART);
+      cookieService.remove(COOKIE_KEYS.CART);
+      console.log('🛒 Cart cleared from storage');
+    } catch (error) {
+      console.warn('Failed to clear cart from storage:', error);
+    }
   };
 
   return (

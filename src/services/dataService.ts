@@ -1,5 +1,6 @@
 import { ref, onValue, push, set, remove, update, serverTimestamp, get } from 'firebase/database';
 import { database } from '../config/firebase';
+import { cacheService, CACHE_KEYS, CACHE_TTL } from './cacheService';
 
 const db = database;
 
@@ -29,8 +30,8 @@ export interface Product {
 export interface Order {
   id: string;
   customerId: string;
-  customerName: string;
-  customerEmail: string;
+  name: string;
+  email: string;
   items: Array<{
     productId: string;
     productName: string;
@@ -38,7 +39,7 @@ export interface Order {
     price: number;
   }>;
   total: number;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
+  status: 'Pending Payment Confirmation' | 'Delivered';
   shippingAddress: {
     street: string;
     city: string;
@@ -47,7 +48,7 @@ export interface Order {
     country: string;
   };
   paymentMethod: string;
-  createdAt: number;
+  createdAt?: string | number | { seconds: number; nanoseconds: number };
   updatedAt?: number;
 }
 
@@ -62,8 +63,19 @@ export interface User {
 
 // Product service
 export const productService = {
-  // Get all products
+  // Get all products with caching
   getProducts: (callback: (products: Product[]) => void) => {
+    // Check cache first
+    const cachedProducts = cacheService.get<Product[]>(CACHE_KEYS.PRODUCTS, {
+      ttl: CACHE_TTL.PRODUCTS,
+      storage: 'localStorage'
+    });
+
+    if (cachedProducts) {
+      console.log('📦 Products loaded from cache');
+      callback(cachedProducts);
+    }
+
     const productsRef = ref(db, 'products');
     return onValue(productsRef, (snapshot) => {
       const data = snapshot.val() || {};
@@ -73,17 +85,45 @@ export const productService = {
       }));
       // Sort by creation date (newest first)
       products.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      
+      // Cache the products
+      cacheService.set(CACHE_KEYS.PRODUCTS, products, {
+        ttl: CACHE_TTL.PRODUCTS,
+        storage: 'localStorage'
+      });
+      
+      console.log('📦 Products loaded from Firebase and cached');
       callback(products);
     });
   },
 
-  // Get single product
+  // Get single product with caching
   getProduct: async (id: string): Promise<Product | null> => {
     try {
+      // Check cache first
+      const cachedProduct = cacheService.get<Product>(`${CACHE_KEYS.PRODUCT}${id}`, {
+        ttl: CACHE_TTL.PRODUCT,
+        storage: 'localStorage'
+      });
+
+      if (cachedProduct) {
+        console.log(`📦 Product ${id} loaded from cache`);
+        return cachedProduct;
+      }
+
       const productRef = ref(db, `products/${id}`);
       const snapshot = await get(productRef);
       if (snapshot.exists()) {
-        return { id, ...snapshot.val() };
+        const product = { id, ...snapshot.val() };
+        
+        // Cache the product
+        cacheService.set(`${CACHE_KEYS.PRODUCT}${id}`, product, {
+          ttl: CACHE_TTL.PRODUCT,
+          storage: 'localStorage'
+        });
+        
+        console.log(`📦 Product ${id} loaded from Firebase and cached`);
+        return product;
       }
       return null;
     } catch (error) {
@@ -101,6 +141,11 @@ export const productService = {
       createdAt: serverTimestamp(),
       createdBy: userId || null
     });
+    
+    // Clear products cache to force refresh
+    cacheService.remove(CACHE_KEYS.PRODUCTS);
+    console.log('📦 Products cache cleared after creation');
+    
     return newRef.key;
   },
 
@@ -112,19 +157,40 @@ export const productService = {
       updatedAt: serverTimestamp(),
       updatedBy: userId || null
     });
+    
+    // Clear caches to force refresh
+    cacheService.remove(CACHE_KEYS.PRODUCTS);
+    cacheService.remove(`${CACHE_KEYS.PRODUCT}${id}`);
+    console.log('📦 Product caches cleared after update');
   },
 
   // Delete product
   deleteProduct: async (id: string) => {
     const productRef = ref(db, `products/${id}`);
     await remove(productRef);
+    
+    // Clear caches to force refresh
+    cacheService.remove(CACHE_KEYS.PRODUCTS);
+    cacheService.remove(`${CACHE_KEYS.PRODUCT}${id}`);
+    console.log('📦 Product caches cleared after deletion');
   }
 };
 
 // Order service
 export const orderService = {
-  // Get all orders
+  // Get all orders with caching
   getOrders: (callback: (orders: Order[]) => void) => {
+    // Check cache first
+    const cachedOrders = cacheService.get<Order[]>(CACHE_KEYS.ORDERS, {
+      ttl: CACHE_TTL.ORDERS,
+      storage: 'localStorage'
+    });
+
+    if (cachedOrders) {
+      console.log('📋 Orders loaded from cache');
+      callback(cachedOrders);
+    }
+
     const ordersRef = ref(db, 'orders');
     return onValue(ordersRef, (snapshot) => {
       const data = snapshot.val() || {};
@@ -134,6 +200,14 @@ export const orderService = {
       }));
       // Sort by creation date (newest first)
       orders.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      
+      // Cache the orders
+      cacheService.set(CACHE_KEYS.ORDERS, orders, {
+        ttl: CACHE_TTL.ORDERS,
+        storage: 'localStorage'
+      });
+      
+      console.log('📋 Orders loaded from Firebase and cached');
       callback(orders);
     });
   },
@@ -159,6 +233,11 @@ export const orderService = {
       ...order,
       createdAt: serverTimestamp()
     });
+    
+    // Clear orders cache to force refresh
+    cacheService.remove(CACHE_KEYS.ORDERS);
+    console.log('📋 Orders cache cleared after creation');
+    
     return newRef.key;
   },
 
@@ -169,6 +248,10 @@ export const orderService = {
       status,
       updatedAt: serverTimestamp()
     });
+    
+    // Clear orders cache to force refresh
+    cacheService.remove(CACHE_KEYS.ORDERS);
+    console.log('📋 Orders cache cleared after status update');
   }
 };
 
@@ -224,7 +307,7 @@ export const userService = {
 
 // Statistics service
 export const statsService = {
-  // Get dashboard statistics
+  // Get dashboard statistics with caching
   getStats: async (): Promise<{
     totalOrders: number;
     totalRevenue: number;
@@ -234,6 +317,24 @@ export const statsService = {
     recentUsers: User[];
   }> => {
     try {
+      // Check cache first
+      const cachedStats = cacheService.get<{
+        totalOrders: number;
+        totalRevenue: number;
+        totalProducts: number;
+        totalUsers: number;
+        recentOrders: Order[];
+        recentUsers: User[];
+      }>(CACHE_KEYS.STATS, {
+        ttl: CACHE_TTL.STATS,
+        storage: 'localStorage'
+      });
+
+      if (cachedStats) {
+        console.log('📊 Stats loaded from cache');
+        return cachedStats;
+      }
+
       const [ordersSnapshot, productsSnapshot, usersSnapshot] = await Promise.all([
         get(ref(db, 'orders')),
         get(ref(db, 'products')),
@@ -262,7 +363,7 @@ export const statsService = {
         .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
         .slice(0, 5);
 
-      return {
+      const stats = {
         totalOrders,
         totalRevenue,
         totalProducts,
@@ -270,6 +371,15 @@ export const statsService = {
         recentOrders,
         recentUsers
       };
+
+      // Cache the stats
+      cacheService.set(CACHE_KEYS.STATS, stats, {
+        ttl: CACHE_TTL.STATS,
+        storage: 'localStorage'
+      });
+
+      console.log('📊 Stats loaded from Firebase and cached');
+      return stats;
     } catch (error) {
       console.error('Error fetching stats:', error);
       return {

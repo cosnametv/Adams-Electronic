@@ -69,25 +69,6 @@ export const Promotions = () => {
           );
         })}
       </div>
-
-      {/* Newsletter Signup */}
-      <div className="mt-16 bg-primary-600 rounded-2xl p-8 text-center text-white">
-        <h3 className="text-2xl font-bold mb-4">Stay Updated</h3>
-        <p className="text-primary-100 mb-6 max-w-2xl mx-auto">
-          Subscribe to our newsletter and be the first to know about new products, 
-          exclusive deals, and special offers.
-        </p>
-        <div className="max-w-md mx-auto flex gap-4">
-          <input
-            type="email"
-            placeholder="Enter your email"
-            className="flex-1 px-4 py-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-300"
-          />
-          <button className="bg-white text-primary-600 px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors">
-            Subscribe
-          </button>
-        </div>
-      </div>
     </section>
   );
 };
