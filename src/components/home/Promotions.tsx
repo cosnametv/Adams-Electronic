@@ -6,15 +6,15 @@ export const Promotions = () => {
     {
       id: 1,
       title: 'Free Shipping',
-      description: 'Free shipping on orders over KSh 10,000',
+      description: 'Free shipping on orders over KSh 10,000 with same-day delivery in Kirinyaga and next-day nationwide.',
       icon: TruckIcon,
       color: 'bg-blue-500',
       link: '/shop/products'
     },
     {
       id: 2,
-      title: '2-Year Warranty',
-      description: 'All products come with 2-year warranty',
+      title: 'Product Warranty',
+      description: 'All products come with manufacturer warranty. We also offer extended warranty options for most items.',
       icon: ShieldIcon,
       color: 'bg-green-500',
       link: '/about'

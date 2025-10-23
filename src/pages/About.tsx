@@ -18,7 +18,7 @@ const values = [
   {
     icon: TruckIcon,
     title: 'Fast Delivery',
-    description: 'Free shipping on orders over KSh 10,000 with same-day delivery in Nairobi and next-day nationwide.'
+    description: 'Free shipping on orders over KSh 10,000 with same-day delivery in Kirinyaga and next-day nationwide.'
   },
   {
     icon: HeadphonesIcon,
