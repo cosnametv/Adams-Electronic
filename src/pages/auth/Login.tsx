@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { useAuth } from '../../contexts/AuthContext';
@@ -43,9 +44,9 @@ export const Login = () => {
             </h2>
             <p className="mt-2 text-sm text-gray-600">
               Or{' '}
-              <a href="/auth/register" className="font-medium text-primary-600 hover:text-primary-700">
+              <Link to="/register" className="font-medium text-primary-600 hover:text-primary-700">
                 create a new account
-              </a>
+              </Link>
             </p>
           </div>
           {error && <div className="p-3 rounded-md bg-red-50 text-red-700 text-sm border border-red-200">{error}</div>}

@@ -12,7 +12,7 @@ type AuthContextValue = {
   role: Role | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, role: Role) => Promise<void>;
+  register: (fullName: string, phoneNumber: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -91,20 +91,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (name: string, email: string, password: string, role: Role) => {
+  const register = async (fullName: string, phoneNumber: string, email: string, password: string) => {
     setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Save user data to Firestore
+      // Save user data to Firestore with auto createdAt
       await setDoc(doc(db, 'Users', user.uid), {
-        name,
+        name: fullName,
+        phoneNumber,
         email,
-        role,
+        role: 'user',
         uid: user.uid,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString() // Format: 2025-10-22T06:56:56.207Z
       });
+
+      console.log('✅ User registered successfully:', { fullName, phoneNumber, email });
+    } catch (error) {
+      console.error('❌ Registration failed:', error);
+      throw error;
     } finally {
       setLoading(false);
     }
