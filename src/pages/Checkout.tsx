@@ -62,7 +62,7 @@ export const Checkout = () => {
           quantity: item.quantity,
           image: item.image,
         })),
-        status: "Pending Payment Confirmation",
+        status: "Pending Payment",
         createdAt: serverTimestamp(),
       };
 

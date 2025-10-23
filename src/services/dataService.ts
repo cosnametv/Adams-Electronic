@@ -39,7 +39,7 @@ export interface Order {
     price: number;
   }>;
   total: number;
-  status: 'Pending Payment Confirmation' | 'Delivered';
+  status: 'Pending Payment' | 'Received' | 'Delivered';
   shippingAddress: {
     street: string;
     city: string;

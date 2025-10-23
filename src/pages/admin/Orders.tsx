@@ -34,7 +34,7 @@ type Order = {
   phone?: string;
   location?: string;
   total: number;
-  status: 'Pending Payment Confirmation' | 'Delivered';
+  status: 'Pending Payment' | 'Received' | 'Delivered';
   createdAt?: any;
   items?: Array<{
     id: string;
@@ -124,8 +124,86 @@ export const Orders: React.FC = () => {
   const updateStatus = async (orderId: string, newStatus: Order['status']) => {
     setUpdatingId(orderId);
     try {
+      // Find the order to get user email
+      const order = orders.find(o => o.id === orderId);
+      if (!order) {
+        console.error('Order not found');
+        return;
+      }
+
+      // Update main orders collection (for admin)
       const orderRef = doc(db, 'orders', orderId);
       await updateDoc(orderRef, { status: newStatus });
+
+      // Update user's orders collection (for user panel)
+      if (order.email) {
+        try {
+          // Query user's orders to find the matching order
+          const userOrdersRef = collection(db, 'users', order.email, 'orders');
+          const userOrdersSnapshot = await getDocs(userOrdersRef);
+          
+          console.log(`🔍 Looking for matching order for user ${order.email}`);
+          console.log(`🔍 Admin order:`, { 
+            total: order.total, 
+            email: order.email, 
+            customerName: order.customerName,
+            name: order.name,
+            allFields: Object.keys(order)
+          });
+          
+          // Find the order with matching data (since IDs might be different)
+          let userOrderId = null;
+          userOrdersSnapshot.docs.forEach((docSnapshot) => {
+            const userOrder = docSnapshot.data();
+            console.log(`🔍 User order ${docSnapshot.id}:`, { 
+              total: userOrder.total, 
+              email: userOrder.email, 
+              name: userOrder.name,
+              customerName: userOrder.customerName,
+              allFields: Object.keys(userOrder)
+            });
+            
+            // More robust matching: check total, email, and name (try different field combinations)
+            if (userOrder.total === order.total && 
+                userOrder.email === order.email &&
+                (userOrder.name === order.customerName || 
+                 userOrder.name === order.name ||
+                 userOrder.customerName === order.customerName ||
+                 userOrder.customerName === order.name)) {
+              userOrderId = docSnapshot.id;
+              console.log(`✅ Found matching order: ${docSnapshot.id}`);
+            }
+          });
+
+          if (userOrderId) {
+            const userOrderRef = doc(db, 'users', order.email, 'orders', userOrderId);
+            await updateDoc(userOrderRef, { status: newStatus });
+            console.log(`✅ Order status synced to user ${order.email}`);
+          } else {
+            console.log(`❌ No matching order found for user ${order.email}`);
+            console.log(`❌ Available user orders:`, userOrdersSnapshot.docs.map(docSnapshot => ({ id: docSnapshot.id, ...docSnapshot.data() })));
+            
+            // Fallback: try to match by just total and email (in case name field is different)
+            userOrdersSnapshot.docs.forEach((docSnapshot) => {
+              const userOrder = docSnapshot.data();
+              if (userOrder.total === order.total && userOrder.email === order.email) {
+                console.log(`🔄 Fallback match found: ${docSnapshot.id}`);
+                const userOrderRef = doc(db, 'users', order.email, 'orders', docSnapshot.id);
+                updateDoc(userOrderRef, { status: newStatus }).then(() => {
+                  console.log(`✅ Order status synced via fallback to user ${order.email}`);
+                }).catch(err => {
+                  console.error(`❌ Fallback sync failed:`, err);
+                });
+              }
+            });
+          }
+        } catch (userError) {
+          console.error('Error updating user order:', userError);
+          // Don't fail the whole operation if user update fails
+        }
+      }
+
+      // Update local state
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
       );
@@ -197,7 +275,7 @@ export const Orders: React.FC = () => {
 
               {/* Status Filter */}
               <div className="flex items-center gap-2 flex-wrap">
-                {(['All', 'Pending Payment Confirmation', 'Delivered'] as const).map((s) => (
+                {(['All', 'Pending Payment', 'Received', 'Delivered'] as const).map((s) => (
                   <button
                     key={s}
                     onClick={() => setStatusFilter(s as any)}
@@ -314,9 +392,10 @@ export const Orders: React.FC = () => {
                           className="border border-gray-300 rounded-md px-2 py-1 text-sm"
                           disabled={updatingId === o.id}
                         >
-                          <option value="Pending Payment Confirmation">
+                          <option value="Pending Payment">
                             Pending Payment
                           </option>
+                          <option value="Received">Received</option>
                           <option value="Delivered">Delivered</option>
                         </select>
                       </td>

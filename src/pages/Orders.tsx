@@ -12,14 +12,16 @@ import {
   RefreshCwIcon,
 } from "lucide-react";
 import { db } from "../config/firebase";
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, onSnapshot } from "firebase/firestore";
 
 const getStatusIcon = (status: string) => {
   switch (status) {
+    case "Pending Payment":
+      return <ClockIcon className="h-5 w-5 text-yellow-500" />;
+    case "Received":
+      return <PackageIcon className="h-5 w-5 text-blue-500" />;
     case "Delivered":
       return <CheckCircleIcon className="h-5 w-5 text-green-500" />;
-    case "Pending Payment Confirmation":
-      return <ClockIcon className="h-5 w-5 text-yellow-500" />;
     default:
       return <PackageIcon className="h-5 w-5 text-gray-500" />;
   }
@@ -27,10 +29,12 @@ const getStatusIcon = (status: string) => {
 
 const getStatusColor = (status: string) => {
   switch (status) {
+    case "Pending Payment":
+      return "bg-yellow-100 text-yellow-800";
+    case "Received":
+      return "bg-blue-100 text-blue-800";
     case "Delivered":
       return "bg-green-100 text-green-800";
-    case "Pending Payment Confirmation":
-      return "bg-yellow-100 text-yellow-800";
     default:
       return "bg-gray-100 text-gray-800";
   }
@@ -38,10 +42,12 @@ const getStatusColor = (status: string) => {
 
 const getStatusText = (status: string) => {
   switch (status) {
+    case "Pending Payment":
+      return "Pending Payment";
+    case "Received":
+      return "Received";
     case "Delivered":
       return "Delivered";
-    case "Pending Payment Confirmation":
-      return "Pending Payment";
     default:
       return "Unknown";
   }
@@ -54,28 +60,28 @@ export const Orders = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      console.log("🛒 Fetching orders for user:", user?.email);
+    console.log("🛒 Setting up real-time listener for user:", user?.email);
+    
+    if (!user?.email) {
+      console.log("🛒 No user email, stopping loading");
+      setLoading(false);
+      return;
+    }
+
+    // Set a timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      console.log("🛒 Timeout reached, stopping loading");
+      setLoading(false);
+    }, 10000); // 10 seconds timeout
+
+    try {
+      console.log("🛒 Setting up real-time listener...");
+      const ordersRef = collection(db, "users", user.email, "orders");
+      const q = query(ordersRef, orderBy("createdAt", "desc"));
       
-      if (!user?.email) {
-        console.log("🛒 No user email, stopping loading");
-        setLoading(false);
-        return;
-      }
-
-      // Set a timeout to prevent infinite loading
-      const timeoutId = setTimeout(() => {
-        console.log("🛒 Timeout reached, stopping loading");
-        setLoading(false);
-      }, 10000); // 10 seconds timeout
-
-      try {
-        console.log("🛒 Querying orders from Firestore...");
-        const ordersRef = collection(db, "users", user.email, "orders");
-        const q = query(ordersRef, orderBy("createdAt", "desc"));
-        const snapshot = await getDocs(q);
-
-        console.log("🛒 Orders snapshot:", snapshot.docs.length, "documents");
+      // Use onSnapshot for real-time updates instead of getDocs
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        console.log("🛒 Real-time update received:", snapshot.docs.length, "documents");
 
         const data = snapshot.docs.map((doc) => ({
           id: doc.id,
@@ -84,16 +90,24 @@ export const Orders = () => {
 
         console.log("🛒 Processed orders:", data);
         setOrders(data);
-      } catch (error) {
-        console.error("🛒 Error loading orders:", error);
-      } finally {
-        clearTimeout(timeoutId);
-        console.log("🛒 Setting loading to false");
         setLoading(false);
-      }
-    };
+        clearTimeout(timeoutId);
+      }, (error) => {
+        console.error("🛒 Error in real-time listener:", error);
+        setLoading(false);
+        clearTimeout(timeoutId);
+      });
 
-    fetchOrders();
+      // Cleanup function to unsubscribe when component unmounts
+      return () => {
+        console.log("🛒 Cleaning up real-time listener");
+        unsubscribe();
+      };
+    } catch (error) {
+      console.error("🛒 Error setting up listener:", error);
+      setLoading(false);
+      clearTimeout(timeoutId);
+    }
   }, [user?.email]);
 
   const filteredOrders =
@@ -148,7 +162,7 @@ export const Orders = () => {
           {/* Filter Tabs */}
           <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
             <div className="flex flex-wrap gap-4">
-              {["all", "Pending Payment Confirmation", "Delivered"].map((status) => (
+              {["all", "Pending Payment", "Received", "Delivered"].map((status) => (
                 <button
                   key={status}
                   onClick={() => setSelectedStatus(status)}
@@ -270,7 +284,7 @@ export const Orders = () => {
                       Status: {getStatusText(order.status)}
                     </span>
                     <div className="flex items-center space-x-3">
-                      {order.status === "delivered" && (
+                      {order.status === "Delivered" && (
                         <>
                           <button className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
                             <StarIcon className="h-4 w-4 mr-2" />

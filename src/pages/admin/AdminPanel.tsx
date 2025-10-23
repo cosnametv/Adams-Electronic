@@ -122,7 +122,7 @@ export const AdminPanel: React.FC = () => {
 
         setRealtimeStats({
           pendingOrders: orders.filter(
-            (o) => o.status === "Pending Payment Confirmation"
+            (o) => o.status === "Pending Payment"
           ).length,
           processingOrders: 0,
           shippedOrders: 0,
@@ -388,7 +388,7 @@ export const AdminPanel: React.FC = () => {
                               <span
                                 className={`px-2 py-1 rounded-full text-xs font-medium ${o.status === "Delivered"
                                   ? "bg-green-100 text-green-700"
-                                  : o.status === "Pending Payment Confirmation"
+                                  : o.status === "Pending Payment"
                                     ? "bg-yellow-100 text-yellow-700"
                                     : "bg-gray-100 text-gray-700"
                                   }`}

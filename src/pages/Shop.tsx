@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
 import { ProductCard } from '../components/ui/ProductCard';
-import { SearchIcon, FilterIcon, GridIcon, ListIcon } from 'lucide-react';
+import { SearchIcon, FilterIcon, GridIcon, ListIcon, ChevronDown } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { productService, Product } from '../services/dataService';
 
@@ -24,8 +24,9 @@ export const Shop = () => {
   const [searchQuery, setSearchQuery] = useState(params.get('search') || '');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
 
-  // ✅ Load products from Firebase
+  // ✅ Load products
   useEffect(() => {
     const unsubscribe = productService.getProducts((fetchedProducts) => {
       setProducts(fetchedProducts);
@@ -34,7 +35,7 @@ export const Shop = () => {
     return unsubscribe;
   }, []);
 
-  // ✅ Keep URL synced
+  // ✅ Sync URL
   useEffect(() => {
     const qs = new URLSearchParams(location.search);
     if (selectedCategory && selectedCategory !== 'All') qs.set('category', selectedCategory);
@@ -50,7 +51,7 @@ export const Shop = () => {
     }
   }, [selectedCategory, searchQuery, location.search, navigate]);
 
-  // ✅ Filtering and sorting
+  // ✅ Filter + Sort
   const filteredProducts = products.filter((product) => {
     const matchesCategory =
       selectedCategory === 'All' || product.category === selectedCategory;
@@ -111,21 +112,40 @@ export const Shop = () => {
                 />
               </div>
 
-              {/* Category Filter */}
-              <div className="flex flex-wrap gap-2">
-                {categories.map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 ${
-                      selectedCategory === category
-                        ? 'bg-primary-500 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              {/* Category Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                  className="flex items-center justify-between w-52 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary-500"
+                >
+                  <span className="truncate">{selectedCategory}</span>
+                  <ChevronDown
+                    className={`h-5 w-5 text-gray-400 transition-transform ${
+                      isCategoryOpen ? 'rotate-180' : ''
                     }`}
-                  >
-                    {category}
-                  </button>
-                ))}
+                  />
+                </button>
+
+                {isCategoryOpen && (
+                  <div className="absolute z-20 mt-2 w-52 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {categories.map((category) => (
+                      <button
+                        key={category}
+                        onClick={() => {
+                          setSelectedCategory(category);
+                          setIsCategoryOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
+                          selectedCategory === category
+                            ? 'bg-primary-100 text-primary-600 font-medium'
+                            : 'text-gray-700'
+                        }`}
+                      >
+                        {category}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Sort & View Mode */}
@@ -145,16 +165,25 @@ export const Shop = () => {
                   </select>
                 </div>
 
+                {/* View Mode */}
                 <div className="flex items-center gap-1 border border-gray-300 rounded-lg">
                   <button
                     onClick={() => setViewMode('grid')}
-                    className={`p-2 ${viewMode === 'grid' ? 'bg-primary-500 text-white' : 'text-gray-400 hover:text-gray-600'}`}
+                    className={`p-2 ${
+                      viewMode === 'grid'
+                        ? 'bg-primary-500 text-white'
+                        : 'text-gray-400 hover:text-gray-600'
+                    }`}
                   >
                     <GridIcon className="h-5 w-5" />
                   </button>
                   <button
                     onClick={() => setViewMode('list')}
-                    className={`p-2 ${viewMode === 'list' ? 'bg-primary-500 text-white' : 'text-gray-400 hover:text-gray-600'}`}
+                    className={`p-2 ${
+                      viewMode === 'list'
+                        ? 'bg-primary-500 text-white'
+                        : 'text-gray-400 hover:text-gray-600'
+                    }`}
                   >
                     <ListIcon className="h-5 w-5" />
                   </button>
@@ -197,7 +226,9 @@ export const Shop = () => {
             <div className="text-center py-12">
               <SearchIcon className="h-16 w-16 mx-auto text-gray-400 mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-              <p className="text-gray-600 mb-4">Try adjusting your filters or search query</p>
+              <p className="text-gray-600 mb-4">
+                Try adjusting your filters or search query
+              </p>
             </div>
           )}
         </div>
