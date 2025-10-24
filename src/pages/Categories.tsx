@@ -12,6 +12,8 @@ import {
   Headphones,
   ArrowLeftIcon,
 } from 'lucide-react';
+import { useSEO } from '../hooks/useSEO';
+import { seoConfig } from '../utils/seo';
 
 const categories = [
   {
@@ -97,6 +99,9 @@ const categories = [
 ];
 
 export function Categories() {
+  // SEO optimization
+  useSEO(seoConfig.categories);
+
   const { id } = useParams();
   const navigate = useNavigate();
 

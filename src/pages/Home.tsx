@@ -5,7 +5,13 @@ import { Hero } from '../components/home/Hero';
 import { Categories } from '../components/home/Categories';
 import { FeaturedProducts } from '../components/home/FeaturedProducts';
 import { Promotions } from '../components/home/Promotions';
+import { useSEO } from '../hooks/useSEO';
+import { seoConfig } from '../utils/seo';
+
 export const Home = () => {
+  // SEO optimization
+  useSEO(seoConfig.home);
+
   // Add smooth scrolling effect
   useEffect(() => {
     document.documentElement.style.scrollBehavior = 'smooth';

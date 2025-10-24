@@ -5,6 +5,8 @@ import { ProductCard } from '../components/ui/ProductCard';
 import { SearchIcon, FilterIcon, GridIcon, ListIcon, ChevronDown } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { productService, Product } from '../services/dataService';
+import { useSEO } from '../hooks/useSEO';
+import { seoConfig } from '../utils/seo';
 
 const categories = [
   'All', 'Phones', 'Laptops', 'Sound Systems', 'TVs', 'House Appliances', 
@@ -12,6 +14,9 @@ const categories = [
 ];
 
 export const Shop = () => {
+  // SEO optimization
+  useSEO(seoConfig.shop);
+
   const location = useLocation();
   const navigate = useNavigate();
 

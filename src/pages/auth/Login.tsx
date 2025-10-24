@@ -5,8 +5,13 @@ import { Footer } from '../../components/layout/Footer';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Loader2Icon, ShieldCheckIcon, UserIcon, MailIcon, LockIcon, EyeIcon, EyeOffIcon } from 'lucide-react';
+import { useSEO } from '../../hooks/useSEO';
+import { seoConfig } from '../../utils/seo';
 
 export const Login = () => {
+  // SEO optimization
+  useSEO(seoConfig.login);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);

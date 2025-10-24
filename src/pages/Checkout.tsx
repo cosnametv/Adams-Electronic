@@ -5,6 +5,8 @@ import { Footer } from "../components/layout/Footer";
 import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../contexts/AuthContext";
 import { ArrowLeftIcon, CheckIcon } from "lucide-react";
+import { useSEO } from "../hooks/useSEO";
+import { seoConfig } from "../utils/seo";
 import { db } from "../config/firebase";
 import {
   collection,
@@ -16,6 +18,9 @@ import {
 } from "firebase/firestore";
 
 export const Checkout = () => {
+  // SEO optimization
+  useSEO(seoConfig.checkout);
+
   const { state, clearCart } = useCart();
   const { user, logout } = useAuth();
   const navigate = useNavigate();

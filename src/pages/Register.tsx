@@ -4,8 +4,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
 import { EyeIcon, EyeOffIcon, UserIcon, PhoneIcon, MailIcon, LockIcon } from 'lucide-react';
+import { useSEO } from '../hooks/useSEO';
+import { seoConfig } from '../utils/seo';
 
 export const Register: React.FC = () => {
+  // SEO optimization
+  useSEO(seoConfig.register);
+
   const { register, loading } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({

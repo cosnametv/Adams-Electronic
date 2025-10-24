@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
 import { MapPinIcon, PhoneIcon, MailIcon, ClockIcon, SendIcon, MessageCircleIcon } from 'lucide-react';
+import { useSEO } from '../hooks/useSEO';
+import { seoConfig } from '../utils/seo';
 
 import { collection, addDoc, Timestamp } from "firebase/firestore";
 import { db } from "../config/firebase";
@@ -61,6 +63,9 @@ const faqs = [
 ];
 
 export const Contact = () => {
+  // SEO optimization
+  useSEO(seoConfig.contact);
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',

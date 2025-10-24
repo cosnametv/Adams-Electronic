@@ -9,8 +9,13 @@ import {
   ShoppingBagIcon,
   ArrowLeftIcon,
 } from 'lucide-react';
+import { useSEO } from '../hooks/useSEO';
+import { seoConfig } from '../utils/seo';
 
 export const Cart = () => {
+  // SEO optimization
+  useSEO(seoConfig.cart);
+
   const { state, updateQuantity, removeFromCart, clearCart } = useCart();
 
   const handleQuantityChange = (id: string, newQuantity: number) => {

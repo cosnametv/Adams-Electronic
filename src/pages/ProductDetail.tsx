@@ -13,6 +13,8 @@ import {
   RotateCcwIcon,
 } from 'lucide-react';
 import { productService, Product } from '../services/dataService';
+import { useSEO } from '../hooks/useSEO';
+import { seoConfig } from '../utils/seo';
 
 export const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,6 +34,22 @@ export const ProductDetail = () => {
       });
     }
   }, [id]);
+
+  // Dynamic SEO for product pages
+  const productSEO = product ? (() => {
+    const originalPrice = product.originalPrice || product.price;
+    const discount = product.discount || 0;
+    const finalPrice = discount > 0 ? originalPrice * (1 - discount / 100) : originalPrice;
+    
+    return seoConfig.product(
+      product.name,
+      finalPrice,
+      product.category,
+      product.brand
+    );
+  })() : seoConfig.shop;
+
+  useSEO(productSEO);
 
   if (loading) {
     return (

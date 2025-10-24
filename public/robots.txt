@@ -1,14 +1,22 @@
-# robots.txt for https://www.adamselectronic.com/
-
 User-agent: *
-Disallow: /admin/
-Disallow: /auth/
-Disallow: /login
-Disallow: /register
-Disallow: /forgot-password
-Disallow: /cart
-Disallow: /checkout
 Allow: /
 
-# Sitemap location
+# Sitemap
 Sitemap: https://www.adamselectronic.com/sitemap.xml
+
+# Disallow admin pages from indexing
+Disallow: /admin/
+Disallow: /admin/products
+Disallow: /admin/orders
+Disallow: /admin/customers
+
+# Allow important pages
+Allow: /
+Allow: /shop/
+Allow: /about
+Allow: /contact
+Allow: /auth/login
+Allow: /auth/register
+
+# Crawl delay (optional)
+Crawl-delay: 1

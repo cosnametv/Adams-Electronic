@@ -1,6 +1,8 @@
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
 import { AwardIcon, UsersIcon, GlobeIcon, ShieldIcon, TruckIcon, HeadphonesIcon, StarIcon, CheckIcon } from 'lucide-react';
+import { useSEO } from '../hooks/useSEO';
+import { seoConfig } from '../utils/seo';
 
 const stats = [
   { icon: UsersIcon, value: '5,000+', label: 'Happy Customers' },
@@ -34,6 +36,9 @@ const values = [
 
 
 export const About = () => {
+  // SEO optimization
+  useSEO(seoConfig.about);
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
