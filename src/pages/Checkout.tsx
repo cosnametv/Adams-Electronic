@@ -5,15 +5,29 @@ import { Footer } from "../components/layout/Footer";
 import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../contexts/AuthContext";
 import { ArrowLeftIcon, CheckIcon } from "lucide-react";
-import { db } from '../config/firebase';
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "../config/firebase";
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  doc,
+  getDoc,
+  setDoc,
+} from "firebase/firestore";
 
 export const Checkout = () => {
   const { state, clearCart } = useCart();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [autoFilled, setAutoFilled] = useState({
+    name: false,
+    email: false,
+    phone: false,
+  });
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -21,15 +35,62 @@ export const Checkout = () => {
     location: "",
   });
 
-  // Auto-fill email and name when user is logged in
+  // ✅ Auto-fill from Firestore
   useEffect(() => {
-    if (user?.email) {
-      setFormData(prev => ({
-        ...prev,
-        email: user.email || "",
-        name: user.displayName || prev.name // Use display name if available
-      }));
-    }
+    const fetchUserData = async () => {
+      if (!user?.uid) return;
+      setLoadingData(true);
+
+      try {
+        const userRef = doc(db, "Users", user.uid);
+        const docSnap = await getDoc(userRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+
+          setFormData((prev) => ({
+            ...prev,
+            name: data.name || user.displayName || prev.name,
+            email: data.email || user.email || prev.email,
+            phone: data.phoneNumber || prev.phone,
+          }));
+
+          setAutoFilled({
+            name: !!(data.name || user.displayName),
+            email: !!(data.email || user.email),
+            phone: !!data.phoneNumber,
+          });
+        } else {
+          // Create doc if missing
+          await setDoc(userRef, {
+            name: user.displayName || "",
+            email: user.email || "",
+            phoneNumber: "",
+            role: "user",
+            uid: user.uid,
+            createdAt: new Date().toISOString(),
+          });
+
+          setFormData((prev) => ({
+            ...prev,
+            email: user.email || prev.email,
+            name: user.displayName || prev.name,
+          }));
+
+          setAutoFilled({
+            name: !!user.displayName,
+            email: !!user.email,
+            phone: false,
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching user:", err);
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    if (user) fetchUserData();
   }, [user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,7 +112,6 @@ export const Checkout = () => {
     setLoading(true);
 
     try {
-      // Build order object
       const orderData = {
         ...formData,
         total: state.totalPrice,
@@ -66,18 +126,13 @@ export const Checkout = () => {
         createdAt: serverTimestamp(),
       };
 
-      // ✅ Save to "orders" collection (for admin)
       await addDoc(collection(db, "orders"), orderData);
-
-      // ✅ Also save under user’s email (for user viewing)
       await addDoc(collection(db, "users", formData.email, "orders"), orderData);
 
       setSubmitted(true);
       clearCart();
 
-      setTimeout(() => {
-        navigate("/orders");
-      }, 3000);
+      setTimeout(() => navigate("/orders"), 3000);
     } catch (error) {
       console.error("Error saving order:", error);
       alert("Failed to place order. Please try again.");
@@ -131,7 +186,9 @@ export const Checkout = () => {
               )}
             </div>
 
-            {submitted ? (
+            {loadingData ? (
+              <p className="text-center text-gray-500">Loading your info...</p>
+            ) : submitted ? (
               <div className="text-center py-8">
                 <CheckIcon className="h-12 w-12 text-green-500 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -143,10 +200,11 @@ export const Checkout = () => {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Name */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Full Name
-                    {user?.displayName && (
+                    {autoFilled.name && (
                       <span className="ml-2 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
                         ✓ Auto-filled
                       </span>
@@ -159,19 +217,15 @@ export const Checkout = () => {
                     onChange={handleInputChange}
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                    placeholder={user?.displayName ? "Name from your account" : "Enter your full name"}
+                    placeholder="Enter your full name"
                   />
-                  {user?.displayName && (
-                    <p className="mt-1 text-xs text-gray-500">
-                      Using name from your logged-in account
-                    </p>
-                  )}
                 </div>
 
+                {/* Email */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Email
-                    {user?.email && (
+                    {autoFilled.email && (
                       <span className="ml-2 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
                         ✓ Auto-filled
                       </span>
@@ -185,20 +239,21 @@ export const Checkout = () => {
                     required
                     readOnly={!!user?.email}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 ${
-                      user?.email ? 'bg-gray-50 cursor-not-allowed' : ''
+                      user?.email ? "bg-gray-50 cursor-not-allowed" : ""
                     }`}
-                    placeholder={user?.email ? "Email from your account" : "Enter your email"}
+                    placeholder="Enter your email"
                   />
                   {user?.email && (
                     <div className="mt-1 flex items-center justify-between">
                       <p className="text-xs text-gray-500">
-                        Using email from your logged-in account
+                        Using email from your account
                       </p>
                       <button
                         type="button"
                         onClick={() => {
                           logout();
-                          setFormData(prev => ({ ...prev, email: "", name: "" }));
+                          setFormData({ name: "", email: "", phone: "", location: "" });
+                          setAutoFilled({ name: false, email: false, phone: false });
                         }}
                         className="text-xs text-red-600 hover:text-red-700 underline"
                       >
@@ -208,9 +263,15 @@ export const Checkout = () => {
                   )}
                 </div>
 
+                {/* Phone */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Phone Number
+                    {autoFilled.phone && (
+                      <span className="ml-2 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                        ✓ Auto-filled
+                      </span>
+                    )}
                   </label>
                   <input
                     type="tel"
@@ -223,6 +284,7 @@ export const Checkout = () => {
                   />
                 </div>
 
+                {/* Location */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Delivery Location
@@ -285,42 +347,33 @@ export const Checkout = () => {
                   KSh {state.totalPrice.toLocaleString()}
                 </span>
               </div>
-
               <div className="flex justify-between text-sm">
                 <span>Shipping</span>
                 <span className="font-medium text-green-600">Free</span>
               </div>
-
               <div className="flex justify-between text-lg font-semibold border-t border-gray-200 pt-2">
                 <span>Total</span>
                 <span>KSh {total.toLocaleString()}</span>
               </div>
             </div>
 
-                <div className="mt-8 p-4 bg-yellow-50 border border-yellow-300 rounded-lg">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Payment Instructions (M-Pesa)
-                  </h3>
-                  <p className="text-gray-700 text-sm">
-                    Kindly make your payment via <b>M-Pesa Paybill</b> before
-                    placing your order:
-                  </p>
-                  <ul className="mt-2 text-sm text-gray-800 space-y-1">
-                    <li>
-                      <b>Business Number:</b> 247247
-                    </li>
-                    <li>
-                      <b>Account Number:</b> 0700056557
-                    </li>
-                    <li>
-                      <b>Amount:</b> KSh {total.toLocaleString()}
-                    </li>
-                  </ul>
-                  <p className="mt-3 text-xs text-gray-600 italic">
-                    After payment, confirm by placing your order below.
-                  </p>
-                </div>
-                
+            <div className="mt-8 p-4 bg-yellow-50 border border-yellow-300 rounded-lg">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Payment Instructions (M-Pesa)
+              </h3>
+              <p className="text-gray-700 text-sm">
+                Kindly make your payment via <b>M-Pesa Paybill</b> before placing your order:
+              </p>
+              <ul className="mt-2 text-sm text-gray-800 space-y-1">
+                <li><b>Business Number:</b> 247247</li>
+                <li><b>Account Number:</b> 0700056557</li>
+                <li><b>Amount:</b> KSh {total.toLocaleString()}</li>
+              </ul>
+              <p className="mt-3 text-xs text-gray-600 italic">
+                After payment, confirm by placing your order below.
+              </p>
+            </div>
+
             <div className="mt-6 pt-6 border-t border-gray-200">
               <div className="flex items-center text-sm text-gray-600">
                 <CheckIcon className="h-5 w-5 text-green-500 mr-2" />

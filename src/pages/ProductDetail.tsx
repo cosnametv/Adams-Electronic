@@ -77,8 +77,8 @@ export const ProductDetail = () => {
     (product.images && product.images.length > 0
       ? product.images
       : product.image
-      ? [product.image]
-      : ['/placeholder.png']) as string[];
+        ? [product.image]
+        : ['/placeholder.png']) as string[];
 
   const handleAddToCart = () => {
     addToCart({
@@ -130,11 +130,10 @@ export const ProductDetail = () => {
                     <button
                       key={index}
                       onClick={() => setSelectedImage(index)}
-                      className={`aspect-square rounded-lg overflow-hidden border-2 ${
-                        selectedImage === index
+                      className={`aspect-square rounded-lg overflow-hidden border-2 ${selectedImage === index
                           ? 'border-primary-500'
                           : 'border-gray-200 hover:border-primary-300'
-                      }`}
+                        }`}
                     >
                       <img
                         src={image}
@@ -170,11 +169,10 @@ export const ProductDetail = () => {
                   {[...Array(5)].map((_, i) => (
                     <StarIcon
                       key={i}
-                      className={`h-5 w-5 ${
-                        i < Math.floor(product.rating || 0)
+                      className={`h-5 w-5 ${i < Math.floor(product.rating || 0)
                           ? 'text-yellow-400'
                           : 'text-gray-300'
-                      }`}
+                        }`}
                       fill={
                         i < Math.floor(product.rating || 0) ? 'currentColor' : 'none'
                       }
@@ -203,15 +201,20 @@ export const ProductDetail = () => {
                 )}
               </div>
 
-              {/* Description */}
               {product.description && (
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Description
-                  </h3>
-                  <p className="text-gray-600 leading-relaxed">{product.description}</p>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Description</h3>
+                  <div className="text-gray-600 leading-relaxed space-y-3">
+                    {product.description
+                      .split(/\n+/)
+                      .filter((para) => para.trim() !== "")
+                      .map((para, index) => (
+                        <p key={index}>{para}</p>
+                      ))}
+                  </div>
                 </div>
               )}
+
 
               {/* Features */}
               {product.features && product.features.length > 0 && (
@@ -267,11 +270,10 @@ export const ProductDetail = () => {
                   </button>
                   <button
                     onClick={() => setIsWishlisted(!isWishlisted)}
-                    className={`p-3 rounded-lg border transition-colors duration-200 ${
-                      isWishlisted
+                    className={`p-3 rounded-lg border transition-colors duration-200 ${isWishlisted
                         ? 'bg-red-50 border-red-200 text-red-600'
                         : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
-                    }`}
+                      }`}
                   >
                     <HeartIcon
                       className="h-5 w-5"
@@ -295,13 +297,13 @@ export const ProductDetail = () => {
                 <div className="flex items-center gap-3">
                   <ShieldIcon className="h-5 w-5 text-primary-500" />
                   <span className="text-sm text-gray-600">
-                    2-year warranty included
+                    All products come with manufacturer warranty.
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
                   <RotateCcwIcon className="h-5 w-5 text-primary-500" />
                   <span className="text-sm text-gray-600">
-                    30-day return policy
+                    5-day return policy
                   </span>
                 </div>
               </div>
